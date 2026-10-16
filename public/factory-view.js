@@ -25,9 +25,9 @@ export class FactoryView {
   update(data) { this.data = data; this.resize(); this.draw(); }
   time() { return this.data.demo ? this.data.elapsed / 1000 : (performance.now() - (this.data.clockStart || 0)) / 1000; }
   draw(forcedMs) {
-    if (this.data.reference) { this.stats = this.width / this.height > 2.25 ? drawWideDemoFactory(this, forcedMs) : drawReferenceFactory(this, forcedMs); return; }
+    if (this.data.reference) { this.stats = this.data.desktopPreview || this.width / this.height > 2.25 ? drawWideDemoFactory(this, forcedMs) : drawReferenceFactory(this, forcedMs); return; }
     if (!this.data.demo) { this.stats = drawLiveFactory(this, forcedMs); return; }
-    if (this.width / this.height > 2.25) { this.stats = drawWideDemoFactory(this, forcedMs); return; }
+    if (this.data.desktopPreview || this.width / this.height > 2.25) { this.stats = drawWideDemoFactory(this, forcedMs); return; }
     const ctx = this.ctx, d = this.data, calls = d.calls || [], completed = calls.filter(c => !c.pending), successful = completed.filter(c => c.end?.ok), failed = completed.filter(c => c.end?.ok === false);
     const successfulCount = d.summary?.success ?? successful.length, failedCount = d.summary?.errors ?? failed.length;
     const completedCount = d.summary ? d.summary.calls - d.summary.pending : completed.length;
@@ -54,7 +54,7 @@ export class FactoryView {
     text('01', 29, 91, '#82c7ff', 8, true, 'center'); text('10', 29, 102, '#82c7ff', 8, true, 'center'); text(d.demo ? 'binary' : 'input', 29, 124, C.dim, 9, false, 'center');
     const readerColor = isActive ? C.blue : '#336596';
     if (isActive) { ctx.shadowBlur = 10 + pulse * 7; ctx.shadowColor = '#209cff44'; }
-    rect(65, 49, 120, 103, '#0c1725', readerColor, 6, 2); ctx.shadowBlur = 0;
+    rect(65, 49, 120, 101, '#0c1725', readerColor, 6, 2); ctx.shadowBlur = 0;
     text(d.sourceLabel || 'REA', 73, 67, C.blue, 15, true);
     ctx.beginPath(); ctx.arc(173, 61, 3, 0, Math.PI * 2); ctx.fillStyle = isActive ? C.cyan : '#28374d'; ctx.fill();
     line(71, 77, 178, 77, '#237ab5');
@@ -77,7 +77,7 @@ export class FactoryView {
     ctx.save(); ctx.translate(471, 59); ctx.rotate(isActive ? motion * .75 : 0);
     for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.fillStyle = '#3188c3'; ctx.fillRect(-3, -15, 6, 8); }
     ctx.beginPath(); ctx.arc(0, 0, 10, 0, 7); ctx.fillStyle = '#3188c3'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 4, 0, 7); ctx.fillStyle = C.bg; ctx.fill(); ctx.restore();
-    rect(437, 84, 67, 64, '#0e1725', d.running && d.stage === 'execute' ? C.blue : '#2c354d', 6, 2);
+    rect(437, 84, 67, 66, '#0e1725', d.running && d.stage === 'execute' ? C.blue : '#2c354d', 6, 2);
     text(isActive && (Math.floor(motion * 2) % 3) ? 'build' : 'idle', 470, 119, '#62738d', 11, false, 'center');
     const lastFailure = d.events?.findLast(e => e.type === 'tool.end' && e.ok === false);
     const failureAge = lastFailure ? (d.demo ? d.startedAt + d.elapsed - lastFailure.at : Date.now() - lastFailure.at) : Infinity;
@@ -159,14 +159,15 @@ export class FactoryView {
     // Quiet labels stay fixed while the actual event state drives the machines.
     const countText = `${failedCount} failed`, labelBounds = labelMetrics(ctx, countText, '600 10px Consolas, monospace', 653, 125);
     const countBounds = { x: sceneX + labelBounds.x * scale, y: sceneY + labelBounds.y * scale, width: labelBounds.width * scale, height: labelBounds.height * scale };
-    this.stats = { completed: successfulCount, failed: failedCount, retainedCalls: calls.length, phase, time, cells: filled, rejecting, layout: 'square-factory', bounds: { content: { x: sceneX, y: sceneY, width: 700 * scale, height: 390 * scale }, rejected: { x: sceneX + 620 * scale, y: sceneY + 49 * scale, width: 66 * scale, height: 88 * scale, countText, countBounds, countBaseline: sceneY + 125 * scale, bottomPadding: (137 - labelBounds.y - labelBounds.height) * scale }, belt: { x: sceneX + 17 * scale, y: sceneY + 160 * scale, width: 671 * scale, height: 17 * scale, cardTop: sceneY + 142 * scale }, bottomPadding: sceneY, horizontalCoverage: 700 * scale / this.width } };
+    const machines = [[65, 49, 120, 101], [437, 84, 67, 66], [527, 82, 70, 68]].map(([x, y, width, height]) => ({ x: sceneX + x * scale, y: sceneY + y * scale, width: width * scale, height: height * scale }));
+    this.stats = { completed: successfulCount, failed: failedCount, retainedCalls: calls.length, phase, time, cells: filled, rejecting, layout: 'square-factory', bounds: { content: { x: sceneX, y: sceneY, width: 700 * scale, height: 390 * scale }, machines, rejected: { x: sceneX + 620 * scale, y: sceneY + 49 * scale, width: 66 * scale, height: 88 * scale, countText, countBounds, countBaseline: sceneY + 125 * scale, bottomPadding: (137 - labelBounds.y - labelBounds.height) * scale, storedBottom: sceneY + 107 * scale, countPlacement: 'inside-bin' }, belt: { x: sceneX + 17 * scale, y: sceneY + 160 * scale, width: 671 * scale, height: 17 * scale, cardTop: sceneY + 142 * scale }, bottomPadding: sceneY, horizontalCoverage: 700 * scale / this.width } };
   }
 }
 
 function labelMetrics(ctx, value, font, centerX, baseline) {
-  ctx.save(); ctx.font = font; const metrics = ctx.measureText(value); ctx.restore();
+  ctx.save(); ctx.font = font; ctx.textAlign = 'center'; const metrics = ctx.measureText(value); ctx.restore();
   const ascent = metrics.actualBoundingBoxAscent || 9, descent = metrics.actualBoundingBoxDescent || 0;
-  return { x: centerX - metrics.width / 2, y: baseline - ascent, width: metrics.width, height: ascent + descent };
+  return { x: centerX - metrics.actualBoundingBoxLeft, y: baseline - ascent, width: metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight, height: ascent + descent };
 }
 
 // A wide preview lays out the machines in native pixels. It keeps their shapes
@@ -219,7 +220,8 @@ function drawWideDemoFactory(view, forcedMs) {
     const stackCount = Math.min(22, 4 + Math.floor(completed.length / 4)); line(readerX, lowerY, readerX, lowerY + lowerH, '#2c4058'); line(readerX, lowerY + lowerH, readerX + stackW + 10, lowerY + lowerH, '#2c4058');
     for (let i = 0; i < stackCount; i++) box(readerX + 6 + i % 2 * 2, lowerY + lowerH - 7 - i * Math.min(5, (lowerH - 12) / 22), stackW, 4, i % 3 ? '#26364e' : '#30445f', null, 1);
     box(notesX, lowerY - 4, notesW, lowerH + 4, '#0f1a29', '#2a3c53', 5); text('NOTES.md', notesX + 10, lowerY + 13, '#bdd0e8', 11, true);
-    const notes = completed.slice(-Math.min(8, Math.floor((lowerH - 28) / 12))); notes.forEach((call, i) => text(`${call.end?.ok ? 'obs' : 'unk'}  ${String(call.name).slice(0, Math.floor((notesW - 56) / 6))}`, notesX + 10, lowerY + 31 + i * 12, call.end?.ok ? '#8ba6c6' : C.red, 10));
+    const noteCount = Math.max(0, Math.min(8, Math.floor((lowerH - 28) / 12))), notes = noteCount ? completed.slice(-noteCount) : [];
+    notes.forEach((call, i) => text(`${call.end?.ok ? 'obs' : 'unk'}  ${String(call.name).slice(0, Math.floor((notesW - 56) / 6))}`, notesX + 10, lowerY + 31 + i * 12, call.end?.ok ? '#8ba6c6' : C.red, 10));
     const mx = contextX + 24, mw = w - margin - mx, my = lowerY + 7, mh = lowerH - 7, cols = clamp(Math.round(Math.sqrt(697 * mw / Math.max(1, mh))), 41, 85), rows = Math.ceil(697 / cols), sx = mw / cols, sy = mh / rows, size = Math.max(2, Math.min(sx, sy) - 2);
     text(reference ? 'one cell = one function · simulated' : 'illustrated progress · simulated', mx, lowerY - 4, '#8396b0', 10);
     for (let i = 0; i < 697; i++) { ctx.fillStyle = i < filled ? i >= filled - 10 ? '#a0d4fa' : '#299ef1' : '#17263a'; if (reference ? reference.gridFlags?.includes(i) : rejecting && i > filled - 25 && i < filled && i % 9 === 0) ctx.fillStyle = C.red; ctx.fillRect(mx + i % cols * sx, my + Math.floor(i / cols) * sy, size, size); }
@@ -228,7 +230,8 @@ function drawWideDemoFactory(view, forcedMs) {
     text(reference ? `exact match ${successCount} / 697 · day ${String(reference.day).padStart(2, '0')}` : `completed ${successCount} / ${total}`, w - margin, h - 12, C.blue, 11, true, 'right');
   } else text(reference ? `SIMULATED · ${reference.read} read · ${successCount} matched · ${reference.open} open · day ${reference.day}` : `SIMULATED · ${successCount} success · ${failedCount} failed · ${calls.filter(call => call.pending).length} pending`, margin, h - 12, '#9cb1ce', 11);
   const countBounds = labelMetrics(ctx, countText, '600 11px "Cascadia Mono", Consolas, monospace', binX + binW / 2, countBaseline);
-  return { completed: successCount, failed: failedCount, retainedCalls: calls.length, phase: reference?.day ?? Math.min(11, Math.floor((d.progress || 0) * 12)), time, cells: filled, rejecting, simulated: true, layout: full ? 'wide-factory' : 'compact-factory', bounds: { content: { x: margin, y: 12, width: w - margin * 2, height: h - 24 }, rejected: { x: binX, y: binY, width: binW, height: binH, countText, countBounds, countBaseline, bottomPadding: binY + binH - countBounds.y - countBounds.height }, belt: { x: margin, y: beltY, width: w - margin * 2, height: 16, cardTop: beltY - 18 }, bottomPadding: 10, horizontalCoverage: (w - margin * 2) / w } };
+  const machines = [{ x: readerX, y: top, width: readerW, height: machineH }, { x: buildX - 36, y: builderY, width: 72, height: builderH }, { x: checkX - 39, y: builderY, width: 78, height: builderH }];
+  return { completed: successCount, failed: failedCount, retainedCalls: calls.length, phase: reference?.day ?? Math.min(11, Math.floor((d.progress || 0) * 12)), time, cells: filled, rejecting, simulated: true, layout: full ? 'wide-factory' : 'compact-factory', bounds: { content: { x: margin, y: 12, width: w - margin * 2, height: h - 24 }, machines, rejected: { x: binX, y: binY, width: binW, height: binH, countText, countBounds, countBaseline, bottomPadding: binY + binH - countBounds.y - countBounds.height, storedBottom: binH >= 70 ? binY + 52 : null, countPlacement: 'inside-bin' }, belt: { x: margin, y: beltY, width: w - margin * 2, height: 16, cardTop: beltY - 18 }, bottomPadding: 10, horizontalCoverage: (w - margin * 2) / w } };
 }
 
 // Live tasks use CSS pixels instead of scaling the detailed promotional scene.
@@ -359,9 +362,12 @@ export function drawReferenceFactory(view, forcedMs) {
   const { ctx, canvas, data: d } = view, r = d.reference;
   const t = forcedMs === undefined ? r.seconds : forcedMs / (d.duration || 24800) * 24.8;
   const scale = Math.min(view.width / 684, view.height / 395), pixel = view.dpr || 1;
+  const sceneX = (view.width - 684 * scale) / 2, sceneY = (view.height - 398 * scale) / 2;
+  const projectRect = (x, y, width, height) => ({ x: sceneX + x * scale, y: sceneY + y * scale, width: width * scale, height: height * scale });
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = P.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(pixel * scale, 0, 0, pixel * scale, (view.width - 684 * scale) * pixel / 2, pixel * scale);
+  // Centre the visible ink (logical y15..383), rather than the unused canvas edges.
+  ctx.setTransform(pixel * scale, 0, 0, pixel * scale, sceneX * pixel, sceneY * pixel);
   const text = (value, x, y, color = P.dim, size = 10, bold = false, align = 'left') => {
     ctx.font = `${bold ? '600 ' : ''}${size}px "Cascadia Mono", Consolas, monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(String(value), x, y); ctx.textAlign = 'left';
   };
@@ -390,7 +396,7 @@ export function drawReferenceFactory(view, forcedMs) {
   text('01', 29, 85, '#8dd0ff', 8, false, 'center'); text('10', 29, 96, '#8dd0ff', 8, false, 'center'); text('binary', 29, 118, P.dim, 9, false, 'center');
   const readerLight = clamp01((r.readerBlue - 130) / 72), builderLight = clamp01((r.builderBlue - 53) / 92);
   ctx.save(); ctx.shadowBlur = readerLight * 8; ctx.shadowColor = '#299fff88';
-  box(63, 45, 117, 100, '#0b1523', `rgb(${Math.round(50 - 9 * readerLight)},${Math.round(105 + 54 * readerLight)},${Math.round(170 + 85 * readerLight)})`, 5, 2); ctx.restore(); text('REA', 71, 63, P.blue, 15, true);
+  box(63, 45, 117, 98, '#0b1523', `rgb(${Math.round(50 - 9 * readerLight)},${Math.round(105 + 54 * readerLight)},${Math.round(170 + 85 * readerLight)})`, 5, 2); ctx.restore(); text('REA', 71, 63, P.blue, 15, true);
   const lit = active ? clamp01((beat - .03) / .09) * (1 - clamp01((beat - .37) / .1)) : 0, mix = (from, to) => Math.round(from + (to - from) * lit);
   ctx.beginPath(); ctx.arc(168, 57, 3, 0, Math.PI * 2); ctx.fillStyle = `rgb(${mix(23, 69)},${mix(47, 200)},${mix(80, 239)})`; ctx.fill();
   // The listing scrolls twelve lines per beat; the line in the third slot reads bright.
@@ -410,7 +416,7 @@ export function drawReferenceFactory(view, forcedMs) {
   for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.fillStyle = '#2c8aca'; ctx.fillRect(-2.5, -13, 5, 7); }
   ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fillStyle = '#2c8aca'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fillStyle = P.bg; ctx.fill(); ctx.restore();
   const building = builderLight > .55;
-  box(435, 79, 64, 62, '#101825', `rgb(${Math.round(42 - builderLight)},${Math.round(50 + 109 * builderLight)},${Math.round(73 + 182 * builderLight)})`, 5, 2); text(building ? 'build' : 'idle', 467, 114, building ? '#8eb9df' : '#66718a', 11, false, 'center');
+  box(435, 79, 64, 64, '#101825', `rgb(${Math.round(42 - builderLight)},${Math.round(50 + 109 * builderLight)},${Math.round(73 + 182 * builderLight)})`, 5, 2); text(building ? 'build' : 'idle', 467, 114, building ? '#8eb9df' : '#66718a', 11, false, 'center');
   // Rejection swells over half a second; ordinary beats pulse the box blue for the first half.
   const alarm = rejecting ? Math.sin(Math.PI * clamp01((t - faults[rejectionIndex]) / .5)) : 0;
   const pulse = !rejecting && active && beat >= .02 && beat < .47 ? Math.sin(Math.PI * (beat - .02) / .45) : 0;
@@ -420,13 +426,17 @@ export function drawReferenceFactory(view, forcedMs) {
   line(-20, 0, 20, 0, color, 2); line(0, -4, 0, 22, color, 2); line(-9, 22, 9, 22, color, 2);
   for (const side of [-16, 16]) { line(side, 0, side, 10, color); ctx.beginPath(); ctx.moveTo(side, 0); ctx.lineTo(side - 7, 10); ctx.lineTo(side + 7, 10); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); }
   ctx.restore();
-  box(523, 77, 68, 67, rejecting ? tint([13, 27, 41], [59, 23, 22], alarm) : tint([13, 27, 41], [9, 41, 72], pulse), rejecting ? P.red : tint([61, 128, 159], [105, 195, 239], pulse), 6, 2);
+  box(523, 77, 68, 66, rejecting ? tint([13, 27, 41], [59, 23, 22], alarm) : tint([13, 27, 41], [9, 41, 72], pulse), rejecting ? P.red : tint([61, 128, 159], [105, 195, 239], pulse), 6, 2);
   text(rejecting ? 'bytes ≠' : pulse > 0 ? 'bytes ==' : 'bytes ?', 557, 102, rejecting ? P.red : tint([101, 119, 142], [230, 237, 246], pulse), 11, pulse > 0, 'center');
   if (r.constants) text('+ const', 557, 122, color, 10, true, 'center');
   if (rejecting) { const p = clamp01((t - faults[rejectionIndex]) / .46); ctx.save(); ctx.globalAlpha = 1 - p * .55; ctx.beginPath(); ctx.arc(557, 111, 38 + p * 13, 0, Math.PI * 2); ctx.strokeStyle = P.red; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore(); }
   box(612, 49, 66, 72, '#11131e', '#422a36', 7); text('rejected', 645, 63, '#8b8190', 9, false, 'center');
-  for (let i = 0; i < Math.min(3, rejected); i++) box(622, 100 - i * 12, 46, 8, '#30121a', '#e53a54', 2);
-  text(`${rejected} / 3`, 645, 130, P.red, 12, true, 'center');
+  for (let i = 0; i < Math.min(3, rejected); i++) box(622, 73 + i * 8, 46, 4, '#30121a', '#e53a54', 2);
+  const countText = `${rejected} / 3`, countBaseline = 111;
+  text(countText, 645, countBaseline, P.red, 12, true, 'center');
+  ctx.save(); ctx.textAlign = 'center'; const countMetrics = ctx.measureText(countText); ctx.restore();
+  const countBounds = projectRect(645 - countMetrics.actualBoundingBoxLeft, countBaseline - countMetrics.actualBoundingBoxAscent,
+    countMetrics.actualBoundingBoxLeft + countMetrics.actualBoundingBoxRight, countMetrics.actualBoundingBoxAscent + countMetrics.actualBoundingBoxDescent);
   ctx.beginPath(); ctx.moveTo(384, 64); ctx.lineTo(371, 87); ctx.lineTo(397, 87); ctx.closePath(); ctx.fillStyle = '#c63a50'; ctx.fill(); text('!', 384, 82, '#11131c', 12, true, 'center'); text('plant', 384, 107, '#cc405a', 10, false, 'center');
 
   box(18, 153, 654, 17, '#101b27', '#2a3345', 8);
@@ -476,13 +486,14 @@ export function drawReferenceFactory(view, forcedMs) {
   }
   text(r.flagged ? `${r.flagged} flagged` : 'byte compare', 320, 379, r.flagged ? P.red : '#71849f', 11);
   text(`exact match ${r.matched} / 697`, 677, 379, r.flagged ? P.red : P.blue, 12, true, 'right');
-  const sceneX = (view.width - 684 * scale) / 2, sceneY = scale;
   return { completed: r.matched, failed: rejected, phase: r.day, time: t, cells: r.matched, rejecting, shift, simulated: true, layout: 'reference-factory', bounds: {
-    content: { x: sceneX, y: sceneY, width: 684 * scale, height: 384 * scale },
-    horizontalCoverage: 684 * scale / view.width, bottomPadding: view.height - sceneY - 384 * scale,
-    rejected: { x: sceneX + 612 * scale, y: sceneY + 49 * scale, width: 66 * scale, height: 72 * scale,
-      countText: `${rejected} / 3`, countBounds: { x: sceneX + 618 * scale, y: sceneY + 118 * scale, width: 55 * scale, height: 14 * scale },
-      countBaseline: sceneY + 130 * scale, bottomPadding: 13 * scale, countPlacement: 'below-bin' },
-    belt: { x: sceneX + 17 * scale, y: sceneY + 153 * scale, width: 651 * scale, height: 17 * scale, cardTop: sceneY + 135 * scale }
+    content: projectRect(0, 15, 684, 368),
+    horizontalCoverage: 684 * scale / view.width, topPadding: sceneY + 15 * scale, bottomPadding: view.height - sceneY - 383 * scale,
+    machines: [projectRect(63, 45, 117, 98), projectRect(435, 79, 64, 64), projectRect(523, 77, 68, 66)],
+    rejected: { ...projectRect(612, 49, 66, 72), countText, countBounds,
+      countBaseline: sceneY + countBaseline * scale, bottomPadding: sceneY + 121 * scale - countBounds.y - countBounds.height,
+      storedBottom: sceneY + 93 * scale, countPlacement: 'inside-bin',
+      text: { value: countText, font: '600 12px "Cascadia Mono", Consolas, monospace', x: sceneX + 645 * scale, baseline: sceneY + countBaseline * scale, scale } },
+    belt: { ...projectRect(18, 153, 654, 17), cardTop: sceneY + 135 * scale }
   } };
 }

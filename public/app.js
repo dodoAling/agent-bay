@@ -287,7 +287,59 @@ export function renderToolResult(call = {}, options = {}) {
 import { DemoPlayer, SCENARIOS } from './demo-player.js';
 import { FactoryView } from './factory-view.js';
 import { referenceState, referenceSparks, referenceFeed } from './demo-scenarios.js';
+import { installThemedSelects, refreshThemedSelects } from './themed-select.js';
 const $ = selector => document.querySelector(selector);
+const exportOnly = new URLSearchParams(location.search).get('export') === '1';
+const desktopInvoke = !exportOnly && window.__TAURI__?.core?.invoke?.bind(window.__TAURI__.core);
+const desktopWindow = !exportOnly && window.__TAURI__?.window?.getCurrentWindow?.();
+installThemedSelects(document);
+let pickingTarget = false, exporting = false;
+for (const button of document.querySelectorAll('.native-browse')) button.hidden = !desktopInvoke;
+document.body.classList.toggle('desktop', Boolean(desktopInvoke));
+function applyWindowStyle(value) {
+  const style = value === 'macos' ? 'macos' : 'windows';
+  document.body.dataset.windowStyle = style;
+  for (const button of document.querySelectorAll('[data-window-style-choice]')) button.setAttribute('aria-pressed', String(button.dataset.windowStyleChoice === style));
+}
+for (const button of document.querySelectorAll('[data-window-style-choice]')) button.disabled = !desktopWindow;
+if (!desktopWindow) $('#window-style-note').textContent = 'Window buttons are available in the desktop app.';
+if (desktopWindow) {
+  $('#desktop-window-controls').hidden = false;
+  let style = /mac/i.test(navigator.userAgentData?.platform || navigator.platform) ? 'macos' : 'windows';
+  try { style = localStorage.getItem('agent-bay.window-style') || style; } catch {}
+  applyWindowStyle(style);
+  let windowStyleEdited = false;
+  void desktopInvoke('desktop_preferences').then(preferences => {
+    if (!windowStyleEdited && ['windows', 'macos'].includes(preferences.windowStyle)) applyWindowStyle(preferences.windowStyle);
+  }).catch(() => {});
+  const changeWindowStyle = style => {
+    windowStyleEdited = true;
+    applyWindowStyle(style);
+    try { localStorage.setItem('agent-bay.window-style', style); } catch {}
+    void desktopInvoke('set_window_style', { style }).catch(error => toast(`Could not save window style: ${error.message || error}`, true));
+  };
+  for (const button of document.querySelectorAll('[data-window-style-choice]')) button.onclick = () => changeWindowStyle(button.dataset.windowStyleChoice);
+  const refreshWindowState = async () => {
+    const maximized = await desktopWindow.isMaximized();
+    document.body.classList.toggle('desktop-maximized', maximized);
+    const label = maximized ? 'Restore window' : 'Maximize window';
+    $('#window-maximize').title = label;
+    $('#window-maximize').setAttribute('aria-label', label);
+  };
+  const windowAction = async action => {
+    try { await desktopWindow[action](); if (action === 'toggleMaximize') await refreshWindowState(); }
+    catch (error) { toast(`Window action failed: ${error.message || error}`, true); }
+  };
+  $('#window-minimize').onclick = () => windowAction('minimize');
+  $('#window-maximize').onclick = () => windowAction('toggleMaximize');
+  $('#window-close').onclick = () => windowAction('close');
+  const dragSurface = event => !event.target.closest('button,input,select,a');
+  $('.titlebar').addEventListener('mousedown', event => {
+    if (event.button === 0 && dragSurface(event)) void windowAction(event.detail === 2 ? 'toggleMaximize' : 'startDragging');
+  });
+  desktopWindow.onResized?.(() => { void refreshWindowState().catch(() => {}); }).catch(() => {});
+  void refreshWindowState().catch(() => {});
+}
 const factory = new FactoryView($('#factory-canvas'));
 const liveState = { runs: [], events: [], sequence: 0, eventLimit: 5000, connections: [], model: null, selected: null, selectedCall: null, filter: '', setup: null, follow: true };
 let state = liveState, demoFrame = null;
@@ -316,7 +368,7 @@ function snapshot(data) {
   if (!player.active) state = liveState;
   renderConnections(); queueRender();
 }
-bridge = new EventSource('/api/stream');
+bridge = exportOnly ? { readyState: EventSource.OPEN, addEventListener() {} } : new EventSource('/api/stream');
 bridge.addEventListener('snapshot', e => snapshot(JSON.parse(e.data)));
 bridge.addEventListener('update', e => {
   const event = JSON.parse(e.data);
@@ -470,13 +522,14 @@ function render() {
   $('#event-count').title = windowNote || 'Lifetime event count. The log shows the latest 300 non-delta events.';
   $('#footer-state').textContent = run ? `${run.mode === 'demo' ? 'SIMULATED' : 'LIVE EVENTS'} · ${eventTotal} events${trimmed ? ` · ${events.length} details retained` : ''} · ${run.status === 'running' ? 'RUNNING' : 'ENDED'}` : 'LIVE EVENTS · No active task';
   $('#footer-state').title = windowNote;
-  $('#export-btn').disabled = !run;
+  $('#export-btn').disabled = !run || exporting;
   const activeAgent = state.runs.some(r => r.source === 'agent' && r.status === 'running');
   $('#stop-btn').disabled = player.active || !activeAgent;
   $('#run-btn').disabled = player.active || activeAgent;
   $('#settings-btn').disabled = player.active;
   $('#tools-btn').disabled = player.active;
   $('#run-select').disabled = player.active;
+  for (const button of document.querySelectorAll('.native-browse')) button.disabled = player.active || activeAgent || pickingTarget;
   $('#checks-list').innerHTML = checks.length ? checks.map(e => `<div class="check-row ${esc(e.status)}"><span>${esc(e.name || 'Check')}</span><span>${{ passed: 'PASS', failed: 'FAIL', unknown: 'UNKNOWN' }[e.status]}</span></div>`).join('') : `<div class="unreported">${checksCount ? 'Earlier check details are outside the retention window' : 'No checks reported'}<span>—</span></div>`;
   const feedCalls = [...calls].reverse();
   $('#tool-feed').title = windowNote || 'Latest 8 retained tool calls';
@@ -545,7 +598,10 @@ function render() {
     $('#phase-message').textContent = stateDetail; $('#phase-message').title = stateDetail;
     $('#flow-scene').classList.toggle('running', visualState === 'working');
   }
-  factory.update({ calls, events, checks, summary: lifetimeSummary, total, progress, stage, reference, visualState, statusMessage: stateLabels[visualState], bridgeConnected, modelOpen, duration: player.active ? demoFrame.duration : 0, demo: player.active, paused: player.active && !demoFrame.playing, running: run?.status === 'running' && (player.active || pending > 0 || modelOpen), elapsed: player.active ? demoFrame.elapsed : run ? (run.endedAt || Date.now()) - run.startedAt : 0, startedAt: run?.startedAt || 0, clockStart: 0, sourceLabel: player.active ? SCENARIOS[demoFrame.scene].source.split(' / ')[0] : calls.at(-1)?.source?.split(' / ')[0] || 'MCP', readerLines });
+  factory.update({ calls, events, checks, summary: lifetimeSummary, total, progress, stage, reference, desktopPreview: Boolean(desktopWindow && player.active && document.body.classList.contains('presentation')), visualState, statusMessage: stateLabels[visualState], bridgeConnected, modelOpen, duration: player.active ? demoFrame.duration : 0, demo: player.active, paused: player.active && !demoFrame.playing, running: run?.status === 'running' && (player.active || pending > 0 || modelOpen), elapsed: player.active ? demoFrame.elapsed : run ? (run.endedAt || Date.now()) - run.startedAt : 0, startedAt: run?.startedAt || 0, clockStart: 0, sourceLabel: player.active ? SCENARIOS[demoFrame.scene].source.split(' / ')[0] : calls.at(-1)?.source?.split(' / ')[0] || 'MCP', readerLines });
+  refreshThemedSelects(document);
+  updatePlaybackControls();
+  updatePreferencesSummary();
   renderElapsed();
 }
 function renderElapsed() {
@@ -649,6 +705,44 @@ async function openSettings(tab = 'model') {
     catch (error) { dialogStatus(error.message, true); }
   }
 }
+let preferencesContext = null;
+function updatePreferencesSummary() {
+  $('#preferences-model').textContent = liveState.model ? `${liveState.model.model} · ${liveState.model.protocol}` : 'No model connected';
+  const connected = liveState.connections.filter(connection => connection.status === 'connected').length;
+  $('#preferences-tools').textContent = connected ? `${connected} connected ${connected === 1 ? 'server' : 'servers'}` : 'No tool servers connected';
+  for (const button of document.querySelectorAll('[data-preferences-connect]')) button.disabled = player.active;
+}
+function openPreferencesPage() {
+  if (!$('#settings-page').hidden) return;
+  preferencesContext = { presentation: document.body.classList.contains('presentation'), playing: player.active && player.playing };
+  if (preferencesContext.playing) player.pause();
+  document.body.classList.remove('presentation');
+  document.body.classList.add('settings-open');
+  $('#settings-page').hidden = false;
+  updatePreferencesSummary(); updatePlaybackControls();
+  $('#close-settings-page').focus();
+}
+function closePreferencesPage() {
+  if ($('#settings-page').hidden) return;
+  $('#settings-page').hidden = true;
+  document.body.classList.remove('settings-open');
+  if (preferencesContext?.presentation && player.active) document.body.classList.add('presentation');
+  if (preferencesContext?.playing && player.active) player.resume();
+  preferencesContext = null;
+  queueRender();
+  (desktopWindow ? $('#app-settings-btn') : $('#preferences-btn')).focus();
+}
+$('#preferences-btn').onclick = openPreferencesPage;
+$('#app-settings-btn').onclick = () => $('#settings-page').hidden ? openPreferencesPage() : closePreferencesPage();
+$('#close-settings-page').onclick = closePreferencesPage;
+for (const button of document.querySelectorAll('[data-preferences-tab]')) button.onclick = () => {
+  for (const item of document.querySelectorAll('[data-preferences-tab]')) {
+    const selected = item === button; item.classList.toggle('active', selected);
+    if (selected) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
+  }
+  for (const panel of document.querySelectorAll('[data-preferences-panel]')) panel.hidden = panel.dataset.preferencesPanel !== button.dataset.preferencesTab;
+};
+for (const button of document.querySelectorAll('[data-preferences-connect]')) button.onclick = () => openSettings(button.dataset.preferencesConnect);
 function setTab(tab) { document.querySelectorAll('[data-tab]').forEach(el => { const active = el.dataset.tab === tab; el.classList.toggle('active', active); el.setAttribute('aria-selected', active); }); document.querySelectorAll('.tab-panel').forEach(el => el.hidden = el.id !== `tab-${tab}`); dialogStatus(''); }
 $('#settings-btn').onclick = () => openSettings();
 $('#tools-btn').onclick = () => openSettings('tools');
@@ -710,12 +804,33 @@ $('#task-form').onsubmit = async event => {
 };
 $('#stop-btn').onclick = async () => { try { await api('/stop', {}); toast('Stopping model requests and tool calls…'); } catch (error) { toast(error.message, true); } };
 $('#demo-btn').onclick = () => $('#preview-dialog').showModal();
-$('#export-btn').onclick = () => {
+async function pickTarget(directory) {
+  if (!desktopInvoke || pickingTarget || player.active) return;
+  pickingTarget = true; render();
+  try {
+    const path = await desktopInvoke('pick_target_path', { directory });
+    if (path) { $('#target').value = path; $('#target').dispatchEvent(new Event('input', { bubbles: true })); }
+  } catch (error) { toast(`Could not select target: ${error.message || error}`, true); }
+  finally { pickingTarget = false; queueRender(); }
+}
+$('#browse-file').onclick = () => pickTarget(false);
+$('#browse-folder').onclick = () => pickTarget(true);
+$('#export-btn').onclick = async () => {
+  if (exporting) return;
   const run = state.runs.find(r => r.id === state.selected); if (!run) return;
   const events = state.events.filter(e => e.runId === run.id);
   const retention = { eventLimit: liveState.eventLimit, retainedEvents: events.length, totalEvents: !player.active ? run.summary?.events ?? events.length : events.length, note: 'Event details cover the retention window; run.summary contains lifetime session totals.' };
-  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), run, events, retention }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = `agent-bay-${run.id}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const data = JSON.stringify({ exportedAt: new Date().toISOString(), run, events, retention }, null, 2);
+  const defaultName = `agent-bay-${run.id}.json`;
+  if (desktopInvoke) {
+    exporting = true; render();
+    try { const path = await desktopInvoke('save_export', { data, defaultName }); if (path) toast('Session exported'); }
+    catch (error) { toast(`Could not export session: ${error.message || error}`, true); }
+    finally { exporting = false; queueRender(); }
+  } else {
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = defaultName; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 };
 const player = new DemoPlayer(frame => {
   demoFrame = frame;
@@ -741,6 +856,7 @@ const player = new DemoPlayer(frame => {
   else queueRender();
 });
 function startPreview(options) {
+  if (desktopWindow) options = { ...options, exportFormat: options.exportFormat || options.format || 'square', format: 'fit' };
   $('#preview-dialog').close();
   state = liveState;
   document.body.classList.add('preview-active');
@@ -771,13 +887,90 @@ $('#preview-exit').onclick = exitPreview;
 $('#preview-position').oninput = event => player.seek(Number(event.target.value));
 $('#preview-speed').onchange = event => player.setSpeed(event.target.value);
 $('#preview-loop').onchange = event => { player.loop = event.target.checked; };
-$('#preview-hide').onclick = () => document.body.classList.add('preview-controls-hidden');
+function updatePlaybackControls() {
+  $('#preview-show-controls').hidden = !player.active || !document.body.classList.contains('preview-controls-hidden') || exportOnly || player.options.controls === false || !$('#settings-page').hidden;
+  if (exportOnly) $('#preview-controls').hidden = true;
+}
+$('#preview-hide').onclick = () => { document.body.classList.add('preview-controls-hidden'); updatePlaybackControls(); };
+$('#preview-show-controls').onclick = () => { document.body.classList.remove('preview-controls-hidden'); updatePlaybackControls(); };
+let videoExportController = null, videoPreviewPlaying = false;
+$('#preview-download').onclick = () => {
+  if (!player.active) return;
+  videoPreviewPlaying = player.playing;
+  if (videoPreviewPlaying) player.pause();
+  const format = player.options.exportFormat || player.options.format;
+  $('#video-export-format').value = ['square', 'wide', 'portrait'].includes(format) ? format : 'square';
+  $('#video-export-form').hidden = false;
+  $('#video-export-progress').hidden = true;
+  $('#video-export-status').textContent = '';
+  $('#video-export-cancel').textContent = 'Close';
+  $('#video-export-dialog').showModal();
+  refreshThemedSelects(document);
+};
+function closeVideoExport() {
+  if (videoExportController) { videoExportController.abort(); return; }
+  $('#video-export-dialog').close();
+}
+$('#video-export-close').onclick = closeVideoExport;
+$('#video-export-cancel').onclick = closeVideoExport;
+$('#video-export-dialog').addEventListener('cancel', event => {
+  if (videoExportController) { event.preventDefault(); videoExportController.abort(); }
+});
+$('#video-export-dialog').addEventListener('close', () => {
+  if (videoPreviewPlaying && player.active) player.resume();
+  videoPreviewPlaying = false;
+});
+const blobBase64 = blob => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(',')[1]);
+  reader.onerror = () => reject(new Error('Could not prepare the video for saving.'));
+  reader.readAsDataURL(blob);
+});
+$('#video-export-form').onsubmit = async event => {
+  event.preventDefault();
+  if (!player.active || videoExportController) return;
+  videoExportController = new AbortController();
+  const signal = videoExportController.signal;
+  $('#video-export-form').hidden = true;
+  $('#video-export-progress').hidden = false;
+  $('#video-export-progress').value = 0;
+  $('#video-export-status').textContent = 'Preparing video…';
+  $('#video-export-cancel').textContent = 'Cancel export';
+  try {
+    const { exportDemoVideo } = await import('./demo-export.js');
+    const result = await exportDemoVideo({ scene: demoFrame.scene, duration: demoFrame.duration / 1000, format: $('#video-export-format').value, fps: 30, signal, onProgress: progress => {
+      $('#video-export-progress').value = progress.progress;
+      $('#video-export-status').textContent = progress.phase === 'rendering' ? `Rendering ${progress.frame} / ${progress.totalFrames} frames…` : progress.phase === 'finalizing' ? 'Finishing video…' : 'Preparing video…';
+    } });
+    if (signal.aborted) throw new DOMException('Video export cancelled.', 'AbortError');
+    $('#video-export-status').textContent = 'Saving video…';
+    if (desktopInvoke) {
+      const base64 = await blobBase64(result.blob);
+      if (signal.aborted) throw new DOMException('Video export cancelled.', 'AbortError');
+      const path = await desktopInvoke('save_video', { base64, defaultName: result.filename });
+      if (path) toast('Video saved');
+    } else {
+      const url = URL.createObjectURL(result.blob), link = document.createElement('a');
+      link.href = url; link.download = result.filename; link.click(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+      toast('Video download started');
+    }
+    $('#video-export-dialog').close();
+  } catch (error) {
+    $('#video-export-status').textContent = error.name === 'AbortError' ? 'Video export cancelled.' : `Video export failed: ${error.message || error}`;
+    $('#video-export-form').hidden = false;
+  } finally {
+    videoExportController = null;
+    $('#video-export-cancel').textContent = 'Close';
+  }
+};
 $('#preview-fullscreen').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch { toast('Fullscreen was denied. Use F11 instead.'); } };
 document.addEventListener('keydown', event => {
-  if (!player.active || event.target.closest('input,textarea,select,dialog')) return;
+  if (event.defaultPrevented) return;
+  if (event.key === 'Escape' && !$('#settings-page').hidden && !document.querySelector('dialog[open]')) { closePreferencesPage(); return; }
+  if (!player.active || event.target.closest('input,textarea,select,button,dialog,[role=combobox],[role=listbox],[role=option]')) return;
   if (event.code === 'Space') { event.preventDefault(); player.playing ? player.pause() : player.resume(); }
   if (event.key.toLowerCase() === 'r') player.restart();
-  if (event.key.toLowerCase() === 'h') document.body.classList.toggle('preview-controls-hidden');
+  if (event.key.toLowerCase() === 'h') { document.body.classList.toggle('preview-controls-hidden'); updatePlaybackControls(); }
   if (event.key.toLowerCase() === 'f') $('#preview-fullscreen').click();
   if (event.key === 'Escape') exitPreview();
 });

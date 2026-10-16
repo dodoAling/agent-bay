@@ -1,0 +1,17 @@
+[package]
+name = "agent-bay-desktop"
+version = "0.3.0"
+description = "Local desktop workspace for agents and MCP tools"
+edition = "2021"
+rust-version = "1.90"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.3", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.3", features = [] }
+tauri-plugin-dialog = "=2.7.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dunce = "1"
+base64 = "0.22"

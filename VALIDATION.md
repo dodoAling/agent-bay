@@ -1,6 +1,30 @@
 # Local verification record
 
-Date: 2026-10-16. Host: Windows x64, Node 24.11.0, REA 6.5.0, Chrome.
+Date: 2026-10-17. Host: Windows x64, Node 24.11.0, REA 6.5.0, Chrome, Rust 1.91.1.
+
+## Settings, desktop previews, and video export (0.3.0)
+
+- The complete automated suite passed 101 tests without failures or skips. Logs: `artifacts/settings-video-tests.txt` and `artifacts/settings-video-final-tests.txt`. New coverage includes three themed-menu interaction tests, six Settings/playback/export workflow tests, and actual WebCodecs encoding and cancellation tests. Three Rust tests cover native path handling, appearance validation, and video payload guards.
+- Twenty native-layout captures at 980×720, 1366×768, 1600×1000, and 1080×1080 fill the client viewport with no outer padding, document overflow, or clipped actions. Browser recording geometry remains unchanged. Report: `artifacts/desktop-preview-layout.json`.
+- The final NSIS build contains Node 24.11.0, 13 production packages and 1144 hash-verified assets. Installer: `src-tauri/target/release/bundle/nsis/Agent Bay_0.3.0_x64-setup.exe`, 26,482,938 bytes. SHA-256: `e049ecb205a755a1d04430938c293c1a2f9466e59d7f80d09b167da1e656505c`. The installer payload was extracted into a path containing spaces; its actual served HTML and application JavaScript matched the packaged manifest.
+- Actual packaged WebView2 acceptance used mouse clicks on Settings and both appearance cards, retaining macOS afterward. Desktop playback filled the window, and Hide/Show restored its floating controls. A real H.264 MP4 was encoded and written through the native Save demo video dialog: 1080×1080, 30 fps, 60 frames, exactly two seconds. Saved bytes matched the encoded SHA-256. The main preview remained paused at 12000 ms. Report: `artifacts/desktop-video-native-verification.json`.
+- The browser's actual Download video workflow produced the complete 24.8-second MP4: `artifacts/agent-bay-cleanroom-square-24.8s-30fps.mp4`. FFprobe confirmed H.264, 1080×1080, 30 fps and all 744 frames; a decoded 12-second cover was inspected. The paused preview retained its position, with zero browser errors and no POST requests. Report: `artifacts/demo-video-full-verification.json`.
+- A controlled H.264 capability rejection also produced a valid portrait WebM: 1080×1920, VP9/VP8, three frames. Short export checks cover cancellation, removal of isolated frames, unchanged existing previews, full DOM/Canvas capture and retained simulation labels. In-app export requires WebCodecs support and renders offline at explicit timestamps; rendering time depends on the device and is shown through progress and cancellation controls.
+- All native QA processes exited normally, released their ports, and left no backend process. Installer wizard/uninstall and native macOS/Linux acceptance remain outside these checks.
+
+## Earlier desktop migration and spacing (0.2.0)
+
+- 90 automated tests passed with no failures or skips. Log: `artifacts/desktop-tests.txt`. Five tests spawn actual desktop backend processes and verify readiness, API/SSE, model cancellation, MCP child cleanup, port release, stdin EOF, parent disappearance, staged paths, and safe startup errors.
+- Two Chrome interaction tests exercise file/folder selection, cancellation, redacted native export, browser download fallback, both titlebar arrangements, minimize/maximize/restore/close routing, dragging, double-click behavior, and native appearance preference precedence and save routing.
+- The prepared Windows package contains Node 24.11.0, 13 production packages, and 1132 hashed resources, including external-agent emitters and Node.js/Python examples. Asset verification imports the staged server with hooks that reject imports outside packaged resources; development dependencies are excluded. Generated resources and runtime binaries are ignored by Git.
+- The square factory scene balances its actual top and bottom ink. Machines 01, 03, and 04 share a 10-logical-pixel conveyor clearance. Rejected counts sit inside the bin with eight pixels between stored slots, count glyphs, and the bin bottom; moving cards remain clear. Progress room labels have a 24-pixel right inset.
+- Sixteen browser layout scenarios and all 744 canonical timestamps passed, including 45 time boundaries, independent Canvas glyph measurements, red-pixel checks, pause, seeking, and live restoration. No browser errors or preview POST requests occurred.
+- Two Rust regression tests, Cargo check/build, formatting, and the release NSIS build passed. Installer: `src-tauri/target/release/bundle/nsis/Agent Bay_0.2.0_x64-setup.exe`, 26,343,114 bytes. SHA-256: `829dd7e818f9ed059c0772b82a58491f1fd0bc2247d7bd04750026fb20e14755`.
+- The NSIS payload was extracted into `artifacts/desktop package 0.2.0/` and run directly, proving resource discovery from a path containing spaces. All 1132 packaged asset hashes and the bundled Node 24.11.0 hash/version matched. No installer wizard, registry installation, shortcut creation, or uninstall was exercised.
+- Actual WebView2 acceptance passed for the frameless window, macOS-left/Windows-right controls, maximize/restore, minimize, close, persisted appearance loading on a fresh process/port, file selection, cancellation, folder selection, and native JSON save. Exported JSON was read back and validated. Browser errors: zero.
+- The packaged app connected to actual REA, discovered 207 tools, and completed a read-only `binary_session` query. Its actual result and counts appeared in the desktop interface; preview exit restored the live session. This did not test native decompilation or a commercial model API.
+- Native close exited with code 0, released the backend port, and left no backend process. Reports: `artifacts/desktop-package-verification.json` and `artifacts/desktop-debug-verification.json`. Screenshots include `desktop-titlebar-windows.png`, `desktop-titlebar-macos.png`, `desktop-native-rea.png`, and `desktop-native-preview.png`.
+- macOS and Linux configuration and injected-path tests do not constitute native host acceptance; their application packages still require builds and GUI checks on those systems.
 
 ## English repository migration
 

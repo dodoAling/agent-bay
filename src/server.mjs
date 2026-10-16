@@ -11,6 +11,7 @@ import { playDemo } from './demo.mjs';
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const STATIC = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/styles.css', ['styles.css', 'text/css']], ['/factory-theme.css', ['factory-theme.css', 'text/css']], ['/factory-view.js', ['factory-view.js', 'text/javascript']], ['/demo-player.js', ['demo-player.js', 'text/javascript']], ['/demo-scenarios.js', ['demo-scenarios.js', 'text/javascript']]]);
+for (const [file, mime] of [['settings.css', 'text/css'], ['themed-select.css', 'text/css'], ['themed-select.js', 'text/javascript'], ['demo-export.js', 'text/javascript'], ['vendor/demo-export-vendor.js', 'text/javascript']]) STATIC.set(`/${file}`, [file, mime]);
 
 export function createApp({ bridgeToken = process.env.AGENT_BAY_BRIDGE_TOKEN || randomBytes(24).toString('hex') } = {}) {
   const store = new EventStore();
@@ -56,7 +57,8 @@ export function createApp({ bridgeToken = process.env.AGENT_BAY_BRIDGE_TOKEN || 
   const server = createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'");
+    const connections = process.env.AGENT_BAY_DESKTOP === '1' ? "'self' ipc: http://ipc.localhost https://ipc.localhost" : "'self'";
+    res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src ${connections}; frame-src 'self'; frame-ancestors 'self'`);
     const host = req.headers.host || '';
     if (!/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(host)) return json(res, 403, { error: 'Only local access is allowed.' });
     if (req.headers.origin && ![`http://${host}`, `https://${host}`].includes(req.headers.origin)) return json(res, 403, { error: 'Cross-site requests are not allowed.' });
@@ -149,7 +151,20 @@ export function createApp({ bridgeToken = process.env.AGENT_BAY_BRIDGE_TOKEN || 
       return json(res, 404, { error: 'Route not found.' });
     } catch (error) { if (!res.headersSent) return json(res, 400, { error: store.scrub(error.message) }); res.end(); }
   });
-  async function close() { clearInterval(heartbeat); agent.stop(); for (const res of streams) res.end(); await hub.close(); await new Promise(resolve => server.close(resolve)); }
+  let closing;
+  function close() {
+    if (!closing) closing = (async () => {
+      clearInterval(heartbeat); agent.stop();
+      for (const res of streams) res.end();
+      streams.clear();
+      // Stop accepting HTTP immediately while MCP children finish their own
+      // bounded transport shutdown. Repeated lifecycle signals share this work.
+      const httpClosed = new Promise(resolve => server.close(resolve));
+      server.closeIdleConnections();
+      await Promise.all([hub.close(), httpClosed]);
+    })();
+    return closing;
+  }
   return { server, store, hub, agent, close };
 }
 

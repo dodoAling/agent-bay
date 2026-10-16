@@ -54,7 +54,8 @@ export class ToolHub {
       transport = new StreamableHTTPClientTransport(url, { requestInit: { headers } });
     } else {
       if (!config.command || !Array.isArray(config.args) || !config.args.every(v => typeof v === 'string')) throw new Error('Enter an executable path and a JSON array of arguments.');
-      transport = new StdioClientTransport({ command: config.command, args: config.args, cwd: config.cwd || process.cwd(), stderr: 'pipe' });
+      const command = process.env.AGENT_BAY_DESKTOP === '1' && /^node(?:\.exe)?$/i.test(config.command) ? process.execPath : config.command;
+      transport = new StdioClientTransport({ command, args: config.args, cwd: config.cwd || process.cwd(), stderr: 'pipe' });
       transport.stderr?.on('data', () => {});
     }
     const client = new Client({ name: 'agent-bay', version: '0.1.0' }, { capabilities: {} });

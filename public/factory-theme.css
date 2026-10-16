@@ -360,7 +360,7 @@ body:not(.presentation) .agent-markdown a{color:#76bcff;text-underline-offset:3p
   body.preview-active:not(.presentation) .flow-panel{height:clamp(400px,50vh,540px);min-height:clamp(400px,50vh,540px)}
   body.preview-active:not(.presentation) .flow-scene{height:auto;min-height:0;flex:1;margin-bottom:12px}
   .presentation:is([data-format=wide],[data-format=fit]) .workspace{display:grid;grid-template-rows:minmax(0,1fr) 108px 124px 64px;min-height:0;overflow:hidden}
-  .presentation:is([data-format=wide],[data-format=fit]) .flow-panel{height:auto;min-height:0;padding-bottom:12px}
+  .presentation:is([data-format=wide],[data-format=fit]) .flow-panel{height:auto;min-height:0;padding-bottom:0}
   .presentation:is([data-format=wide],[data-format=fit]) .flow-panel>.panel-heading{height:40px;min-height:40px}
   .presentation:is([data-format=wide],[data-format=fit]) .flow-scene{height:auto;min-height:0;flex:1;margin:0 12px}
   .presentation:is([data-format=wide],[data-format=fit]) .factory-progress{height:auto;min-height:0;padding:9px 24px}
@@ -436,12 +436,14 @@ body.presentation[data-format=square] .signal>i{height:6px;margin-top:4px}
 body.presentation[data-format=square] .signal small{margin-top:5px;letter-spacing:.3px}
 body.presentation[data-format=square] .rail-bottom{height:22.8px;font-size:11px;line-height:11px;letter-spacing:0;padding:0 9px;align-items:flex-start}
 body.presentation[data-format=square] .rail-bottom>.dot,body.presentation[data-format=square] .rail-bottom>span:last-child{display:none}
-body.presentation[data-format=square] .flow-panel>.panel-heading{padding:0 14px 0 25px;gap:12px;transform:translateY(2px)}
+body.presentation[data-format=square] .flow-panel>.panel-heading{padding:0 14px 0 25px;gap:12px}
 body.presentation[data-format=square] .flow-panel .section-label{letter-spacing:0}
 body.presentation[data-format=square] #flow-source{flex:0 0 166.7px;text-align:right}
-body.presentation[data-format=square] .factory-progress{padding:14px 14px 14px 24px}
+@media(min-width:761px){
+ body.presentation[data-format=square] .factory-progress{padding:14px 24px}
+ body.presentation[data-format=square] .factory-progress-row{grid-template-columns:146px minmax(0,1fr) 95px 56px}
+}
 body.presentation[data-format=square] .factory-progress-heading{letter-spacing:0;margin-bottom:7px}
-body.presentation[data-format=square] .factory-progress-row{grid-template-columns:146px 333px 1fr 56px}
 body.presentation[data-format=square] .factory-progress-row strong{margin-left:-2px}
 body.presentation[data-format=square] .factory-progress-row small{font-size:12px}
 body.presentation[data-format=square] .factory-progress-foot{margin-top:-2px}
@@ -472,3 +474,151 @@ body.presentation.reference-scene .tool-feed{overflow:hidden}
 body.presentation.reference-scene .tool-item,body.presentation.reference-scene .tool-item:first-child{background:transparent}
 body.presentation.reference-scene .tool-item.fresh{background:#0b1c2d}
 body.presentation.reference-scene .tool-item.failed .tool-title b,body.presentation.reference-scene .tool-item.failed .tool-meta{color:#fa3f5b}
+/* Native target selection stays compact within the task dock. */
+.target-input-row{display:flex;align-items:center;gap:10px;min-width:0}
+.target-input-row #target{flex:1;min-width:0;width:100%}
+.native-browse{flex-shrink:0;color:var(--blue);font-size:10px;padding:1px 4px;white-space:nowrap}
+.native-browse:hover{color:var(--text)}
+.native-browse[hidden]{display:none}
+
+/* The native workspace shares one frame with its draggable title bar. Browser
+   windows and the recording composition keep their existing outer frame. */
+body:not(.desktop) :is(#desktop-window-controls,#window-style){display:none!important}
+body.desktop:not(.presentation){padding:0;overflow:hidden;background:var(--bg)}
+body.desktop:not(.presentation)>.window{margin:0;width:100%;max-width:none;height:100dvh;max-height:100dvh;min-height:0;border:0;border-radius:0;box-shadow:none}
+body.desktop .titlebar{position:relative;flex-shrink:0;user-select:none;-webkit-user-select:none;background:#0d1420}
+body.desktop:not(.presentation) .titlebar{height:36px;min-height:36px;font-size:11px;letter-spacing:.4px}
+body.desktop .titlebar .traffic{display:none}
+body.desktop .titlebar-caption{max-width:calc(100% - 420px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+body.desktop .title-right{right:152px;pointer-events:none;font-size:9px;gap:6px;transform:none}
+body.desktop .desktop-window-controls{position:absolute;right:0;top:0;height:100%;display:flex;align-items:center;gap:0;z-index:2}
+body.desktop .window-control{position:relative;display:grid;place-items:center;width:46px;height:100%;padding:0;border:0;border-radius:0;background:transparent;color:#a6b4c7;transition:background .12s,color .12s;cursor:default}
+body.desktop .window-control:hover{background:#ffffff12;color:#eef3fa}
+body.desktop .window-control:active{background:#ffffff1e}
+body.desktop .window-control:focus-visible{outline:2px solid #6ab5f4;outline-offset:-5px}
+body.desktop .window-control svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1;pointer-events:none}
+body.desktop .window-control .window-icon-restore{display:none}
+body.desktop.desktop-maximized #window-maximize .window-icon-maximize{display:none}
+body.desktop.desktop-maximized #window-maximize .window-icon-restore{display:block}
+body.desktop #window-minimize{order:1}
+body.desktop #window-maximize{order:2}
+body.desktop #window-close{order:3}
+body.desktop[data-window-style=windows] #window-close:hover{background:#d9424e;color:#fff}
+body.desktop[data-window-style=windows] #window-close:active{background:#bb303d;color:#fff}
+body.desktop[data-window-style=macos] .desktop-window-controls{left:9px;right:auto}
+body.desktop[data-window-style=macos] .window-control{width:22px;background:transparent;transition:none}
+body.desktop[data-window-style=macos] .window-control::before{content:'';position:absolute;left:50%;top:50%;width:12px;height:12px;border:1px solid #0002;border-radius:50%;transform:translate(-50%,-50%)}
+body.desktop[data-window-style=macos] #window-close{order:1;color:#6b1712}
+body.desktop[data-window-style=macos] #window-minimize{order:2;color:#75500a}
+body.desktop[data-window-style=macos] #window-maximize{order:3;color:#0b5427}
+body.desktop[data-window-style=macos] #window-close::before{background:#ff6058}
+body.desktop[data-window-style=macos] #window-minimize::before{background:#ffbd2e}
+body.desktop[data-window-style=macos] #window-maximize::before{background:#28c840}
+body.desktop[data-window-style=macos] .window-control:active::before{filter:brightness(.82)}
+body.desktop[data-window-style=macos] .window-control svg{position:relative;width:9px;height:9px;stroke-width:1.4;opacity:0}
+body.desktop[data-window-style=macos] .desktop-window-controls:hover .window-control svg,body.desktop[data-window-style=macos] .window-control:focus-visible svg{opacity:1}
+body.desktop[data-window-style=macos] .title-right{right:18px}
+body.desktop .window-style-select{height:26px;width:96px;padding:2px 7px;border:1px solid #2a3c52;border-radius:4px;background:#101b2a;color:#9aafc8;font-size:11px}
+body.desktop .window-style-select:hover{border-color:#40658c;color:#c9dcef}
+body.desktop .window-style-select:focus-visible{outline:2px solid #6ab5f4;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){body.desktop .window-control{transition:none}}
+@media(max-width:760px){.target-input-row{flex-wrap:wrap;gap:4px}.target-input-row #target{flex-basis:100%}}
+
+/* Native previews fill the client area. Browser recording formats retain their
+   fixed compositions; only desktop presentation receives this height budget. */
+body.desktop.presentation{display:block;align-items:stretch;justify-content:flex-start;padding:0;min-height:100dvh;height:100dvh;overflow:hidden;background:var(--bg);background-image:none}
+body.desktop.presentation::before,body.desktop.presentation::after{display:none!important}
+body.desktop.presentation>.window{position:relative;margin:0;width:100vw!important;max-width:none;height:100dvh!important;max-height:100dvh;min-height:0;border:0;border-radius:0;box-shadow:none}
+body.desktop.presentation .titlebar{height:36px;min-height:36px;font-size:11px;letter-spacing:.4px}
+body.desktop.presentation .titlebar>span{transform:none}
+body.desktop.presentation .masthead{height:112px;min-height:112px;padding:14px 26px;gap:16px;flex-wrap:nowrap}
+body.desktop.presentation .brand-icon{width:74px;height:74px;border-radius:15px}
+body.desktop.presentation .brand-icon svg{width:66px;height:66px}
+body.desktop.presentation h1{font-size:30px;line-height:1.15;margin:0 0 7px;letter-spacing:-.7px}
+body.desktop.presentation .brand-sub{font-size:12px;line-height:20px;gap:7px;letter-spacing:.2px;min-width:0;overflow:hidden}
+body.desktop.presentation #model-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.desktop.presentation .brand-caption{font-size:11px;line-height:17px;margin-top:4px;white-space:nowrap}
+body.desktop.presentation .metrics{width:270px;grid-template-columns:1fr 1fr;grid-template-rows:36px 36px;gap:3px 22px;transform:none;margin-left:auto}
+body.desktop.presentation .metrics b{font-size:25px;line-height:1;font-weight:500}
+body.desktop.presentation .metrics span{font-size:11px;line-height:1.2;margin-top:3px}
+body.desktop.presentation main{display:grid;grid-template-columns:clamp(248px,20vw,320px) minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
+body.desktop.presentation .rail{display:flex;height:auto;max-height:none;min-height:0;padding:16px 12px 8px;overflow:hidden}
+body.desktop.presentation .rail-session-header{height:14px;font-size:10px;line-height:14px;margin:0 7px 10px}
+body.desktop.presentation .target-card{height:auto;min-height:96px;padding:10px 12px}
+body.desktop.presentation .target-card strong{font-size:17px;line-height:1.3;margin-top:4px}
+body.desktop.presentation .target-card p{font-size:10px;line-height:14px;margin:4px 0}
+body.desktop.presentation .chips span{font-size:9px;line-height:17px;padding-inline:5px}
+body.desktop.presentation .rail-heading{margin:13px 7px 8px;flex-shrink:0}
+body.desktop.presentation .rail-heading .section-label{font-size:10px}
+body.desktop.presentation .tool-feed{min-height:80px;overflow:auto;scrollbar-width:thin;scrollbar-color:#283a50 transparent}
+body.desktop.presentation .tool-item{padding:4px 9px;min-height:40px;margin-bottom:4px}
+body.desktop.presentation .tool-title{font-size:11px;line-height:17px}
+body.desktop.presentation .tool-inline-args{font-size:10px;min-width:0}
+body.desktop.presentation .tool-meta{font-size:10px;line-height:16px;margin-top:1px;gap:6px}
+body.desktop.presentation .checks-section{height:196px;min-height:196px;margin:12px 7px 0;padding-top:11px;padding-bottom:0}
+body.desktop.presentation .checks-section>.section-label{font-size:10px}
+body.desktop.presentation .signal{margin-top:9px}
+body.desktop.presentation .checks-section>.section-label+.signal{margin-top:8px}
+body.desktop.presentation .signal>div{font-size:12px;line-height:18px}
+body.desktop.presentation .signal b{font-size:12px}
+body.desktop.presentation .signal span{font-size:11px}
+body.desktop.presentation .signal>i{height:4px;margin-top:4px}
+body.desktop.presentation .signal small{font-size:9px;line-height:13px;margin-top:3px;letter-spacing:0}
+body.desktop.presentation .rail-bottom{height:20px;min-height:20px;margin-top:0;padding:8px 7px 0;font-size:8px;line-height:12px;align-items:center;flex-shrink:0}
+body.desktop.presentation .workspace{display:grid;grid-template-rows:minmax(0,1fr) 100px 128px 64px;min-height:0;min-width:0;overflow:hidden}
+body.desktop.presentation .flow-panel{height:auto;min-height:0;padding:0 0 12px;display:flex;flex-direction:column;overflow:hidden}
+body.desktop.presentation .flow-panel>.panel-heading{height:40px;min-height:40px;padding:0 20px;gap:12px;transform:none;flex-shrink:0}
+body.desktop.presentation .flow-panel .section-label{font-size:10px;letter-spacing:.3px}
+body.desktop.presentation .factory-source,body.desktop.presentation .flow-source{font-size:11px}
+body.desktop.presentation #flow-source{flex:0 0 auto;max-width:32%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.desktop.presentation .flow-scene{height:auto;min-height:0;flex:1;margin:0 12px;overflow:hidden}
+body.desktop.presentation .factory-progress{height:auto;min-height:0;padding:9px 20px;overflow:hidden}
+body.desktop.presentation .factory-progress-heading{font-size:10px;line-height:12px;margin-bottom:2px;letter-spacing:.2px}
+body.desktop.presentation .factory-progress-row{height:24px;grid-template-columns:120px minmax(0,1fr) 78px 40px;gap:12px;font-size:12px}
+body.desktop.presentation .factory-progress-row>div{height:12px}
+body.desktop.presentation .factory-progress-row strong{font-size:12px;margin-left:0}
+body.desktop.presentation .factory-progress-row small{font-size:10px}
+body.desktop.presentation .factory-progress-foot,body.desktop.presentation .factory-progress-foot strong{font-size:11px;line-height:18px;margin-top:0}
+body.desktop.presentation .room-actions{display:grid;height:auto;min-height:0;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:18px;padding:12px 20px;overflow:hidden}
+body.desktop.presentation .room-actions h3{font-size:11px;line-height:16px;margin:0 0 10px;transform:none;white-space:normal}
+body.desktop.presentation .room-actions .room-chips{width:auto;max-width:100%;gap:5px;row-gap:5px;margin-left:0}
+body.desktop.presentation.reference-scene .room-actions>div:nth-child(2) .room-chips{width:auto;gap:5px}
+body.desktop.presentation .room-actions .room-chips span{width:auto!important;font-size:11px;line-height:18px;padding:3px 7px}
+body.desktop.presentation .detail-grid{display:block;height:64px;min-height:0;flex:none;overflow:hidden}
+body.desktop.presentation .timeline-panel{display:flex;height:100%;min-height:0;max-height:none;padding:4px 20px 16px;overflow:hidden}
+body.desktop.presentation .timeline{overflow:hidden}
+body.desktop.presentation .log-row{grid-template-columns:54px 60px minmax(0,1fr);font-size:12px;line-height:18px;gap:10px;padding:1px 0}
+body.desktop.presentation .window>footer{left:calc(clamp(248px,20vw,320px) + 20px);right:16px;bottom:3px;height:11px;font-size:8px;line-height:11px}
+@media(min-width:761px) and (max-height:860px){
+  body.desktop.presentation .masthead{height:88px;min-height:88px;padding:10px 20px;gap:14px}
+  body.desktop.presentation .brand-icon{width:60px;height:60px;border-radius:12px}
+  body.desktop.presentation .brand-icon svg{width:56px;height:56px}
+  body.desktop.presentation h1{font-size:26px;margin-bottom:4px}
+  body.desktop.presentation .brand-sub{font-size:11px;line-height:18px}
+  body.desktop.presentation .brand-caption{font-size:10px;line-height:15px;margin-top:2px}
+  body.desktop.presentation .metrics{width:230px;grid-template-rows:29px 29px;gap:2px 18px}
+  body.desktop.presentation .metrics b{font-size:23px}
+  body.desktop.presentation .metrics span{font-size:10px;margin-top:1px}
+  body.desktop.presentation .workspace{grid-template-rows:minmax(0,1fr) 80px 108px 64px}
+  body.desktop.presentation .flow-panel>.panel-heading{height:36px;min-height:36px;padding-inline:16px}
+  body.desktop.presentation .factory-progress{padding:6px 16px}
+  body.desktop.presentation .factory-progress-heading{display:none}
+  body.desktop.presentation .factory-progress-foot,body.desktop.presentation .factory-progress-foot strong{line-height:16px}
+  body.desktop.presentation .room-actions{padding:10px 16px;gap:14px}
+  body.desktop.presentation .room-actions h3{font-size:10px;line-height:16px;margin-bottom:8px}
+  body.desktop.presentation .room-actions .room-chips span{font-size:10px;padding:3px 6px}
+}
+@media(min-width:761px) and (max-height:760px){
+  body.desktop.presentation .masthead{height:80px;min-height:80px;padding-block:8px}
+  body.desktop.presentation .brand-icon{width:56px;height:56px}
+  body.desktop.presentation .brand-icon svg{width:52px;height:52px}
+  body.desktop.presentation .workspace{grid-template-rows:minmax(0,1fr) 72px 96px 56px}
+  body.desktop.presentation .factory-progress{padding-block:5px}
+  body.desktop.presentation .factory-progress-row{height:22px}
+  body.desktop.presentation .room-actions{padding-block:8px}
+  body.desktop.presentation .room-actions h3{margin-bottom:4px}
+  body.desktop.presentation .room-actions .room-chips span{padding-block:2px}
+  body.desktop.presentation .detail-grid{height:56px}
+  body.desktop.presentation .timeline-panel{padding:4px 16px 12px}
+  body.desktop.presentation .log-row{font-size:11px;line-height:16px}
+}

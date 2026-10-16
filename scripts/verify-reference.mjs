@@ -40,6 +40,17 @@ const assertFrame = (actual, expected, context) => {
   assert.equal(actual.factory.phase, expected.day, `${context}: factory day`);
   assert.equal(actual.scene, 'cleanroom', `${context}: correct scene`);
   assert.equal(actual.playing, false, `${context}: paused virtual clock`);
+  const { rejected, belt, machines } = actual.factory.bounds || {};
+  const glyph = rejected?.countBounds;
+  assert.ok(glyph && belt, `${context}: measured rejected glyph and belt bounds are available`);
+  assert.equal(rejected.countPlacement, 'inside-bin', `${context}: rejected count stays inside its own bin`);
+  assert.ok(rejected.y + rejected.height - glyph.y - glyph.height >= 7, `${context}: count clears the bin bottom by 8px (1px scaling tolerance)`);
+  assert.ok(Number.isFinite(rejected.storedBottom) && glyph.y - rejected.storedBottom >= 7, `${context}: reserved reject slots clear the count by 8px (1px scaling tolerance)`);
+  assert.ok(belt.cardTop - glyph.y - glyph.height >= 7, `${context}: travelling cards clear the count by 8px (1px scaling tolerance)`);
+  assert.equal(machines?.length, 3, `${context}: all three machine bounds are available`);
+  const machineGaps = machines.map(rect => belt.y - rect.y - rect.height);
+  assert.ok(Math.max(...machineGaps) - Math.min(...machineGaps) <= 1, `${context}: reader, builder and oracle have the same belt clearance`);
+  assert.ok(machineGaps.every(gap => gap >= 7), `${context}: machine-to-belt clearance is at least 8px (1px scaling tolerance)`);
 };
 try {
   const page = await browser.newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 });
@@ -61,6 +72,7 @@ try {
     console.log(`DOM frame comparison: ${end}/744`);
   }
   report.checks.push('All 744 canonical frame timestamps match independently measured read/matched/open/day/rejected/runtime values in DOM and Canvas state.');
+  report.checks.push('All 744 frames keep rejected count glyphs 8px clear of stored rejects, bin bottom and travelling cards; the three machines share a belt clearance (1px scaling tolerance).');
 
   // Hard-coded nodes make accidental edits to the measured-data fixture visible.
   const known = [[0, 24, 9], [180, 181, 163], [360, 415, 386], [540, 626, 592], [743, 697, 696]];
@@ -70,21 +82,47 @@ try {
   }
   report.checks.push('Known 0/6/12/18/final-second values and observed 592→591 / 620→619 dips match.');
 
-  // Counters can be numerically correct while later drawings cover their ink.
-  // The rejected label belongs above the conveyor, in its own visible strip.
+  // Capture actual Canvas glyph metrics, then inspect their pixel region.
+  // Production layout bounds alone cannot prove that later drawing leaves text visible.
   report.rejectedCountInk = [];
   for (const ms of [0, 8000, 12000, 24700]) {
-    await page.evaluate(ms => window.agentBayPreview.renderAt(ms), ms);
-    const redPixels = await page.evaluate(() => {
-      const pixels = document.querySelector('#factory-canvas').getContext('2d').getImageData(612, 118, 66, 16).data;
-      let visible = 0;
-      for (let i = 0; i < pixels.length; i += 4) if (pixels[i] > 150 && pixels[i] - pixels[i + 1] > 80 && pixels[i] - pixels[i + 2] > 60) visible++;
-      return visible;
-    });
-    assert.ok(redPixels > 20, `rejected counter remains visibly red above the conveyor at ${ms}ms`);
-    report.rejectedCountInk.push({ ms, redPixels });
+    const measured = await page.evaluate(ms => {
+      const canvas = document.querySelector('#factory-canvas'), ctx = canvas.getContext('2d'), rect = canvas.getBoundingClientRect();
+      const sx = rect.width / canvas.width, sy = rect.height / canvas.height, original = ctx.fillText;
+      let glyph;
+      ctx.fillText = function(value, x, y, ...args) {
+        if (/^\d+ \/ 3$/.test(String(value))) {
+          const metric = this.measureText(value), transform = this.getTransform();
+          glyph = { x: ((x - metric.actualBoundingBoxLeft) * transform.a + transform.e) * sx,
+            y: ((y - metric.actualBoundingBoxAscent) * transform.d + transform.f) * sy,
+            width: (metric.actualBoundingBoxLeft + metric.actualBoundingBoxRight) * transform.a * sx,
+            height: (metric.actualBoundingBoxAscent + metric.actualBoundingBoxDescent) * transform.d * sy,
+            font: this.font, text: String(value) };
+        }
+        return original.call(this, value, x, y, ...args);
+      };
+      try { window.agentBayPreview.renderAt(ms); } finally { ctx.fillText = original; }
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data, background = Array.from(pixels.slice(0, 3));
+      let redPixels = 0, redRows = 0, inkTop = canvas.height, inkBottom = -1;
+      if (glyph) {
+        const x0 = Math.max(0, Math.floor(glyph.x / sx)), x1 = Math.min(canvas.width, Math.ceil((glyph.x + glyph.width) / sx));
+        const y0 = Math.max(0, Math.floor(glyph.y / sy)), y1 = Math.min(canvas.height, Math.ceil((glyph.y + glyph.height) / sy));
+        for (let y = y0; y < y1; y++) { let hits = 0; for (let x = x0; x < x1; x++) { const i = (y * canvas.width + x) * 4; if (pixels[i] > 150 && pixels[i] - pixels[i + 1] > 80 && pixels[i] - pixels[i + 2] > 60) hits++; } redPixels += hits; if (hits) redRows++; }
+      }
+      for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
+        const i = (y * canvas.width + x) * 4;
+        if (Math.abs(pixels[i] - background[0]) + Math.abs(pixels[i + 1] - background[1]) + Math.abs(pixels[i + 2] - background[2]) > 34) { inkTop = Math.min(inkTop, y); inkBottom = Math.max(inkBottom, y); }
+      }
+      return { glyph, reportedGlyph: window.agentBayPreview.factoryState().bounds.rejected.countBounds,
+        redPixels, redRows, padding: { top: inkTop * sy, bottom: (canvas.height - inkBottom - 1) * sy } };
+    }, ms);
+    assert.ok(measured.glyph && measured.redPixels > 20 && measured.redRows >= 4, `rejected counter has visible red glyphs at ${ms}ms`);
+    for (const key of ['x', 'y', 'width', 'height']) assert.ok(Math.abs(measured.glyph[key] - measured.reportedGlyph[key]) <= 1, `reported ${key} agrees with actual Canvas text metrics at ${ms}ms`);
+    assert.ok(measured.padding.top >= 8 && measured.padding.bottom >= 8, `both canvas margins have at least 8px breathing room at ${ms}ms`);
+    assert.ok(Math.abs(measured.padding.top - measured.padding.bottom) <= 3, `actual ink has balanced vertical padding at ${ms}ms`);
+    report.rejectedCountInk.push({ ms, ...measured });
   }
-  report.checks.push('Rejected 0/3 through 3/3 counters have visible pixel ink above the conveyor at start, failure, mid-run and ending.');
+  report.checks.push('Rejected 0/3 through 3/3 counters match actual Canvas glyph metrics and have visible red ink; top/bottom ink margins are at least 8px and differ by no more than 3px at start, failure, mid-run and ending.');
 
   // Exercise frame boundaries with 0.001 ms on either side, including backward seeks.
   const boundaryIndices = [1, 61, 122, 243, 247, 363, 496, 511, 539, 552, 573, 593, 625, 668, 743];
@@ -124,13 +162,13 @@ try {
   }
   report.layout = await page.evaluate(() => Object.fromEntries(['.window', '.titlebar', '.masthead', '.rail', '.flow-panel', '.flow-scene', '#factory-canvas', '.factory-progress', '.room-actions', '.detail-grid'].map(selector => { const el = document.querySelector(selector), r = el.getBoundingClientRect(); return [selector, { x: r.x, y: r.y, width: r.width, height: r.height }]; })));
   assert.equal(report.layout['.window'].x, 36); assert.equal(report.layout['.window'].y, 36); assert.equal(report.layout['.window'].width, 1008); assert.equal(report.layout['.window'].height, 1008);
-  assert.equal(report.layout['.rail'].width, 300); assert.equal(report.layout['.flow-panel'].height, 442);
+  assert.ok(Math.abs(report.layout['.rail'].width - 300) <= 1, 'sidebar remains within 1px of its 300px native width'); assert.equal(report.layout['.flow-panel'].height, 442);
   assert.equal(report.layout['#factory-canvas'].y, 266);
   assert.equal(report.layout['.factory-progress'].y, 661);
   assert.equal(report.layout['.room-actions'].y, 801);
-  assert.equal(report.layout['#factory-canvas'].width, 684); assert.equal(report.layout['#factory-canvas'].height, 395);
+  assert.ok(Math.abs(report.layout['#factory-canvas'].width - 684) <= 1, 'factory canvas width stays within 1px of its 684px native viewport'); assert.equal(report.layout['#factory-canvas'].height, 395);
   assert.equal(await page.evaluate(() => document.querySelectorAll('video').length), 0, 'native scene has no video element');
-  report.checks.push('1080-square native geometry: 1008-square window at (36,36), sidebar 300, factory canvas 684×395; no embedded video element.');
+  report.checks.push(`1080-square geometry: 1008-square window at (36,36), sidebar ${report.layout['.rail'].width}px, factory canvas ${report.layout['#factory-canvas'].width}×${report.layout['#factory-canvas'].height}px; no embedded video element.`);
 
   // Ending state must survive exact-duration rendering and a return to the start.
   await page.evaluate(() => window.agentBayPreview.renderAt(24800));

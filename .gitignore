@@ -5,3 +5,8 @@ node_modules/
 artifacts/
 *.log
 __pycache__/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/resources/server/
+src-tauri/resources/.server-stage-*/
+src-tauri/binaries/

@@ -18,9 +18,12 @@ export function drawReferenceFactory(view, forcedMs) {
   const { ctx, canvas, data: d } = view, r = d.reference;
   const t = forcedMs === undefined ? r.seconds : forcedMs / (d.duration || 24800) * 24.8;
   const scale = Math.min(view.width / 684, view.height / 395), pixel = view.dpr || 1;
+  const sceneX = (view.width - 684 * scale) / 2, sceneY = (view.height - 398 * scale) / 2;
+  const projectRect = (x, y, width, height) => ({ x: sceneX + x * scale, y: sceneY + y * scale, width: width * scale, height: height * scale });
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = P.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(pixel * scale, 0, 0, pixel * scale, (view.width - 684 * scale) * pixel / 2, pixel * scale);
+  // Centre the visible ink (logical y15..383), rather than the unused canvas edges.
+  ctx.setTransform(pixel * scale, 0, 0, pixel * scale, sceneX * pixel, sceneY * pixel);
   const text = (value, x, y, color = P.dim, size = 10, bold = false, align = 'left') => {
     ctx.font = `${bold ? '600 ' : ''}${size}px "Cascadia Mono", Consolas, monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(String(value), x, y); ctx.textAlign = 'left';
   };
@@ -49,7 +52,7 @@ export function drawReferenceFactory(view, forcedMs) {
   text('01', 29, 85, '#8dd0ff', 8, false, 'center'); text('10', 29, 96, '#8dd0ff', 8, false, 'center'); text('binary', 29, 118, P.dim, 9, false, 'center');
   const readerLight = clamp01((r.readerBlue - 130) / 72), builderLight = clamp01((r.builderBlue - 53) / 92);
   ctx.save(); ctx.shadowBlur = readerLight * 8; ctx.shadowColor = '#299fff88';
-  box(63, 45, 117, 100, '#0b1523', `rgb(${Math.round(50 - 9 * readerLight)},${Math.round(105 + 54 * readerLight)},${Math.round(170 + 85 * readerLight)})`, 5, 2); ctx.restore(); text('REA', 71, 63, P.blue, 15, true);
+  box(63, 45, 117, 98, '#0b1523', `rgb(${Math.round(50 - 9 * readerLight)},${Math.round(105 + 54 * readerLight)},${Math.round(170 + 85 * readerLight)})`, 5, 2); ctx.restore(); text('REA', 71, 63, P.blue, 15, true);
   const lit = active ? clamp01((beat - .03) / .09) * (1 - clamp01((beat - .37) / .1)) : 0, mix = (from, to) => Math.round(from + (to - from) * lit);
   ctx.beginPath(); ctx.arc(168, 57, 3, 0, Math.PI * 2); ctx.fillStyle = `rgb(${mix(23, 69)},${mix(47, 200)},${mix(80, 239)})`; ctx.fill();
   // The listing scrolls twelve lines per beat; the line in the third slot reads bright.
@@ -69,7 +72,7 @@ export function drawReferenceFactory(view, forcedMs) {
   for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.fillStyle = '#2c8aca'; ctx.fillRect(-2.5, -13, 5, 7); }
   ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fillStyle = '#2c8aca'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fillStyle = P.bg; ctx.fill(); ctx.restore();
   const building = builderLight > .55;
-  box(435, 79, 64, 62, '#101825', `rgb(${Math.round(42 - builderLight)},${Math.round(50 + 109 * builderLight)},${Math.round(73 + 182 * builderLight)})`, 5, 2); text(building ? 'build' : 'idle', 467, 114, building ? '#8eb9df' : '#66718a', 11, false, 'center');
+  box(435, 79, 64, 64, '#101825', `rgb(${Math.round(42 - builderLight)},${Math.round(50 + 109 * builderLight)},${Math.round(73 + 182 * builderLight)})`, 5, 2); text(building ? 'build' : 'idle', 467, 114, building ? '#8eb9df' : '#66718a', 11, false, 'center');
   // Rejection swells over half a second; ordinary beats pulse the box blue for the first half.
   const alarm = rejecting ? Math.sin(Math.PI * clamp01((t - faults[rejectionIndex]) / .5)) : 0;
   const pulse = !rejecting && active && beat >= .02 && beat < .47 ? Math.sin(Math.PI * (beat - .02) / .45) : 0;
@@ -79,13 +82,17 @@ export function drawReferenceFactory(view, forcedMs) {
   line(-20, 0, 20, 0, color, 2); line(0, -4, 0, 22, color, 2); line(-9, 22, 9, 22, color, 2);
   for (const side of [-16, 16]) { line(side, 0, side, 10, color); ctx.beginPath(); ctx.moveTo(side, 0); ctx.lineTo(side - 7, 10); ctx.lineTo(side + 7, 10); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); }
   ctx.restore();
-  box(523, 77, 68, 67, rejecting ? tint([13, 27, 41], [59, 23, 22], alarm) : tint([13, 27, 41], [9, 41, 72], pulse), rejecting ? P.red : tint([61, 128, 159], [105, 195, 239], pulse), 6, 2);
+  box(523, 77, 68, 66, rejecting ? tint([13, 27, 41], [59, 23, 22], alarm) : tint([13, 27, 41], [9, 41, 72], pulse), rejecting ? P.red : tint([61, 128, 159], [105, 195, 239], pulse), 6, 2);
   text(rejecting ? 'bytes ≠' : pulse > 0 ? 'bytes ==' : 'bytes ?', 557, 102, rejecting ? P.red : tint([101, 119, 142], [230, 237, 246], pulse), 11, pulse > 0, 'center');
   if (r.constants) text('+ const', 557, 122, color, 10, true, 'center');
   if (rejecting) { const p = clamp01((t - faults[rejectionIndex]) / .46); ctx.save(); ctx.globalAlpha = 1 - p * .55; ctx.beginPath(); ctx.arc(557, 111, 38 + p * 13, 0, Math.PI * 2); ctx.strokeStyle = P.red; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore(); }
   box(612, 49, 66, 72, '#11131e', '#422a36', 7); text('rejected', 645, 63, '#8b8190', 9, false, 'center');
-  for (let i = 0; i < Math.min(3, rejected); i++) box(622, 100 - i * 12, 46, 8, '#30121a', '#e53a54', 2);
-  text(`${rejected} / 3`, 645, 130, P.red, 12, true, 'center');
+  for (let i = 0; i < Math.min(3, rejected); i++) box(622, 73 + i * 8, 46, 4, '#30121a', '#e53a54', 2);
+  const countText = `${rejected} / 3`, countBaseline = 111;
+  text(countText, 645, countBaseline, P.red, 12, true, 'center');
+  ctx.save(); ctx.textAlign = 'center'; const countMetrics = ctx.measureText(countText); ctx.restore();
+  const countBounds = projectRect(645 - countMetrics.actualBoundingBoxLeft, countBaseline - countMetrics.actualBoundingBoxAscent,
+    countMetrics.actualBoundingBoxLeft + countMetrics.actualBoundingBoxRight, countMetrics.actualBoundingBoxAscent + countMetrics.actualBoundingBoxDescent);
   ctx.beginPath(); ctx.moveTo(384, 64); ctx.lineTo(371, 87); ctx.lineTo(397, 87); ctx.closePath(); ctx.fillStyle = '#c63a50'; ctx.fill(); text('!', 384, 82, '#11131c', 12, true, 'center'); text('plant', 384, 107, '#cc405a', 10, false, 'center');
 
   box(18, 153, 654, 17, '#101b27', '#2a3345', 8);
@@ -135,13 +142,14 @@ export function drawReferenceFactory(view, forcedMs) {
   }
   text(r.flagged ? `${r.flagged} flagged` : 'byte compare', 320, 379, r.flagged ? P.red : '#71849f', 11);
   text(`exact match ${r.matched} / 697`, 677, 379, r.flagged ? P.red : P.blue, 12, true, 'right');
-  const sceneX = (view.width - 684 * scale) / 2, sceneY = scale;
   return { completed: r.matched, failed: rejected, phase: r.day, time: t, cells: r.matched, rejecting, shift, simulated: true, layout: 'reference-factory', bounds: {
-    content: { x: sceneX, y: sceneY, width: 684 * scale, height: 384 * scale },
-    horizontalCoverage: 684 * scale / view.width, bottomPadding: view.height - sceneY - 384 * scale,
-    rejected: { x: sceneX + 612 * scale, y: sceneY + 49 * scale, width: 66 * scale, height: 72 * scale,
-      countText: `${rejected} / 3`, countBounds: { x: sceneX + 618 * scale, y: sceneY + 118 * scale, width: 55 * scale, height: 14 * scale },
-      countBaseline: sceneY + 130 * scale, bottomPadding: 13 * scale, countPlacement: 'below-bin' },
-    belt: { x: sceneX + 17 * scale, y: sceneY + 153 * scale, width: 651 * scale, height: 17 * scale, cardTop: sceneY + 135 * scale }
+    content: projectRect(0, 15, 684, 368),
+    horizontalCoverage: 684 * scale / view.width, topPadding: sceneY + 15 * scale, bottomPadding: view.height - sceneY - 383 * scale,
+    machines: [projectRect(63, 45, 117, 98), projectRect(435, 79, 64, 64), projectRect(523, 77, 68, 66)],
+    rejected: { ...projectRect(612, 49, 66, 72), countText, countBounds,
+      countBaseline: sceneY + countBaseline * scale, bottomPadding: sceneY + 121 * scale - countBounds.y - countBounds.height,
+      storedBottom: sceneY + 93 * scale, countPlacement: 'inside-bin',
+      text: { value: countText, font: '600 12px "Cascadia Mono", Consolas, monospace', x: sceneX + 645 * scale, baseline: sceneY + countBaseline * scale, scale } },
+    belt: { ...projectRect(18, 153, 654, 17), cardTop: sceneY + 135 * scale }
   } };
 }

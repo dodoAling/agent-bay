@@ -1,0 +1,32 @@
+[
+  {
+    "name": "html2canvas",
+    "version": "1.4.1",
+    "license": "MIT"
+  },
+  {
+    "name": "mediabunny",
+    "version": "1.61.5",
+    "license": "MPL-2.0"
+  },
+  {
+    "name": "css-line-break",
+    "version": "2.1.0",
+    "license": "MIT"
+  },
+  {
+    "name": "text-segmentation",
+    "version": "1.0.3",
+    "license": "MIT"
+  },
+  {
+    "name": "utrie",
+    "version": "1.0.2",
+    "license": "MIT"
+  },
+  {
+    "name": "base64-arraybuffer",
+    "version": "1.0.2",
+    "license": "MIT"
+  }
+]

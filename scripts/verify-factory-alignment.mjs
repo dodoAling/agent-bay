@@ -39,6 +39,32 @@ async function measure(page) {
     };
     for (const selector of selectors) elements[selector] = bounds(document.querySelector(selector));
     const canvas = document.querySelector('#factory-canvas'), ctx = canvas.getContext('2d');
+    // Observe the actual draw rather than inferring glyphs from a synthetic box.
+    const scaleX = elements['#factory-canvas'].width / canvas.width, scaleY = elements['#factory-canvas'].height / canvas.height;
+    const transformBounds = (x, y, width, height) => {
+      const matrix = ctx.getTransform();
+      const corners = [[x, y], [x + width, y], [x, y + height], [x + width, y + height]].map(([xx, yy]) => ({ x: (matrix.a * xx + matrix.c * yy + matrix.e) * scaleX, y: (matrix.b * xx + matrix.d * yy + matrix.f) * scaleY }));
+      const left = Math.min(...corners.map(p => p.x)), top = Math.min(...corners.map(p => p.y));
+      return { x: left, y: top, width: Math.max(...corners.map(p => p.x)) - left, height: Math.max(...corners.map(p => p.y)) - top };
+    };
+    const fillText = ctx.fillText, roundRect = ctx.roundRect;
+    let drawnCount, drawnBin, lastRectangle;
+    const rectangles = [], drawnMachines = [];
+    ctx.roundRect = function(x, y, width, height, ...args) {
+      lastRectangle = transformBounds(x, y, width, height); rectangles.push(lastRectangle);
+      return roundRect.call(this, x, y, width, height, ...args);
+    };
+    ctx.fillText = function(value, x, y, ...args) {
+      if (/^\d+ (?:\/ 3|failed)$/.test(String(value))) {
+        const metric = this.measureText(value);
+        drawnCount = { text: String(value), font: this.font, ...transformBounds(x - metric.actualBoundingBoxLeft, y - metric.actualBoundingBoxAscent, metric.actualBoundingBoxLeft + metric.actualBoundingBoxRight, metric.actualBoundingBoxAscent + metric.actualBoundingBoxDescent) };
+      }
+      if (value === 'rejected') drawnBin = lastRectangle;
+      if (/^(?:REA|build|idle|bytes [=?≠]+)$/.test(String(value)) && lastRectangle && !drawnMachines.some(rect => rect.x === lastRectangle.x && rect.y === lastRectangle.y)) drawnMachines.push(lastRectangle);
+      return fillText.call(this, value, x, y, ...args);
+    };
+    try { window.agentBayPreview.renderAt(window.agentBayPreview.state().elapsed); }
+    finally { ctx.fillText = fillText; ctx.roundRect = roundRect; }
     const w = canvas.width, h = canvas.height, data = ctx.getImageData(0, 0, w, h).data;
     const background = Array.from(data.slice(0, 3));
     let left = w, right = -1, top = h, bottom = -1;
@@ -50,24 +76,15 @@ async function measure(page) {
     }
     const ratio = elements['#factory-canvas'].width / w;
     const ink = { left: left * ratio, right: (right + 1) * ratio, top: top * ratio, bottom: (bottom + 1) * ratio,
-      widthRatio: (right - left + 1) / w, bottomPadding: (h - bottom - 1) * ratio,
+      widthRatio: (right - left + 1) / w, topPadding: top * scaleY, bottomPadding: (h - bottom - 1) * scaleY,
       leftPadding: left * ratio, rightPadding: (w - right - 1) * ratio };
     const factory = window.agentBayPreview.factoryState();
-    let count = factory?.bounds?.rejected;
-    let belt = factory?.bounds?.belt;
-    if (!count && window.agentBayPreview.state()?.scene === 'cleanroom') {
-      // The reference scene uses its original 684 × 395 coordinate system.
-      const cw = elements['#factory-canvas'].width, ch = elements['#factory-canvas'].height;
-      const scale = Math.min(cw / 684, ch / 395), offset = (cw - 684 * scale) / 2;
-      count = { countText: `${factory.failed} / 3`, countBounds: { x: offset + 624 * scale, y: 119 * scale, width: 42 * scale, height: 14 * scale } };
-      belt = { y: 154 * scale, cardTop: 136 * scale };
-    }
-    const label = count?.countBounds;
+    const count = factory?.bounds?.rejected, belt = factory?.bounds?.belt;
+    const label = drawnCount;
     let redPixels = 0, redRows = 0;
     if (label) {
-      const pixelRatio = w / elements['#factory-canvas'].width;
-      const x0 = Math.max(0, Math.floor(label.x * pixelRatio)), x1 = Math.min(w, Math.ceil((label.x + label.width) * pixelRatio));
-      const y0 = Math.max(0, Math.floor(label.y * pixelRatio)), y1 = Math.min(h, Math.ceil((label.y + label.height) * pixelRatio));
+      const x0 = Math.max(0, Math.floor(label.x / scaleX)), x1 = Math.min(w, Math.ceil((label.x + label.width) / scaleX));
+      const y0 = Math.max(0, Math.floor(label.y / scaleY)), y1 = Math.min(h, Math.ceil((label.y + label.height) / scaleY));
       for (let y = y0; y < y1; y++) {
         let hits = 0;
         for (let x = x0; x < x1; x++) {
@@ -78,9 +95,13 @@ async function measure(page) {
         if (hits > 0) redRows++;
       }
     }
+    const storedSlots = drawnBin && rectangles.filter(rect => rect.width >= 20 && rect.height <= 8 && rect.x > drawnBin.x && rect.x + rect.width < drawnBin.x + drawnBin.width && rect.y > drawnBin.y && rect.y + rect.height < (label?.y ?? Infinity));
     return { viewport: { width: innerWidth, height: innerHeight, documentWidth: document.documentElement.scrollWidth },
-      elements, ink, factory, rejectedCount: { countText: count?.countText, label, redPixels, redRows, beltY: belt?.y, cardTop: belt?.cardTop },
+      elements, ink, factory, rejectedCount: { countText: count?.countText, label, reportedLabel: count?.countBounds, bin: drawnBin,
+        storedBottom: count?.storedBottom, visibleStoredBottom: storedSlots?.length ? Math.max(...storedSlots.map(rect => rect.y + rect.height)) : null,
+        redPixels, redRows, beltY: belt?.y, cardTop: belt?.cardTop }, drawnMachines,
       roomChips: Array.from(document.querySelectorAll('.room-chips span')).map(bounds),
+      progressRoomLabels: Array.from(document.querySelectorAll('.factory-progress-row small')).map(bounds),
       timelineRows: Array.from(document.querySelectorAll('.timeline .log-row')).map(bounds) };
   });
 }
@@ -109,11 +130,25 @@ try {
       check('no horizontal document overflow', measured.viewport.documentWidth <= variant.width, measured.viewport);
       check('drawing occupies the canvas width', measured.ink.widthRatio >= .78, measured.ink);
       check('drawing has bottom breathing room', measured.ink.bottomPadding >= 8, measured.ink);
+      if (scene === 'cleanroom') {
+        check('drawing has top breathing room', measured.ink.topPadding >= 8, measured.ink);
+        check('drawing has balanced vertical padding', Math.abs(measured.ink.topPadding - measured.ink.bottomPadding) <= 3, measured.ink);
+      }
+      check('room progress labels retain 20px right breathing room', measured.progressRoomLabels.length === 2 && measured.progressRoomLabels.every(label => e['.factory-progress'].right - label.right >= 20), measured.progressRoomLabels);
       const rejected = measured.rejectedCount;
       check('rejected count agrees with observed demo failures', Number(rejected.countText?.match(/^\d+/)?.[0]) === measured.factory.failed, rejected);
       check('rejected count has visible red glyphs', rejected.redPixels >= 8 && rejected.redRows >= 4, rejected);
       check('rejected count stays above the belt', rejected.label && rejected.label.y + rejected.label.height <= rejected.beltY - 3, rejected);
-      check('rejected count stays above travelling cards', rejected.label && rejected.label.y + rejected.label.height <= rejected.cardTop, rejected);
+      check('rejected count clears travelling cards by at least 8px', rejected.label && rejected.cardTop - rejected.label.y - rejected.label.height >= 7, rejected);
+      check('rejected count has at least 8px inside the bin bottom', rejected.label && rejected.bin && rejected.bin.y + rejected.bin.height - rejected.label.y - rejected.label.height >= 7, rejected);
+      check('reported glyph bounds match actual Canvas text metrics', rejected.label && rejected.reportedLabel && ['x', 'y', 'width', 'height'].every(key => Math.abs(rejected.label[key] - rejected.reportedLabel[key]) <= 1), rejected);
+      if (Number.isFinite(rejected.visibleStoredBottom)) check('stored rejects clear count glyphs by at least 8px', rejected.label.y - rejected.visibleStoredBottom >= 7, rejected);
+      if (measured.factory.layout === 'reference-factory') {
+        check('reserved reject slots clear count glyphs by at least 8px', Number.isFinite(rejected.storedBottom) && rejected.label.y - rejected.storedBottom >= 7, rejected);
+        const machines = measured.drawnMachines.slice(0, 3), gaps = machines.map(rect => rejected.beltY - rect.y - rect.height);
+        check('reader, builder and oracle share a bottom alignment', gaps.length === 3 && Math.max(...gaps) - Math.min(...gaps) <= 1, { machines, gaps });
+        check('machines clear the belt by at least 8px', gaps.length === 3 && gaps.every(gap => gap >= 7), { machines, gaps });
+      }
       check('canvas stays within its scene', e['#factory-canvas'].bottom <= e['.flow-scene'].bottom + 1 && e['#factory-canvas'].right <= e['.flow-scene'].right + 1, e['#factory-canvas']);
       if (variant.presentation) {
         for (const selector of ['.flow-panel', '.factory-progress', '.room-actions', '.detail-grid', '.timeline-panel']) {
