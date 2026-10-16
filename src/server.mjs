@@ -71,7 +71,7 @@ export function createApp({ bridgeToken = process.env.AGENT_BAY_BRIDGE_TOKEN || 
         return res.end(await readFile(join(publicDir, file)));
       }
       if (req.method === 'GET' && url.pathname === '/api/state') return json(res, 200, snapshot());
-      if (req.method === 'GET' && url.pathname === '/api/setup') return json(res, 200, { rea: detectRea(), bridgeToken });
+      if (req.method === 'GET' && url.pathname === '/api/setup') return json(res, 200, { rea: detectRea(), bridgeToken, integration: { command: process.execPath, proxyScript: resolve(publicDir, '..', 'scripts', 'mcp-proxy.mjs') } });
       if (req.method === 'GET' && url.pathname === '/api/stream') {
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
         streams.add(res);

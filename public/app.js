@@ -700,19 +700,67 @@ function renderToolLibrary() {
 async function openSettings(tab = 'model') {
   $('#connect-dialog').showModal();
   setTab(tab); dialogStatus('');
-  if (!state.setup) {
-    try { state.setup = await api('/setup'); $('#bridge-url').textContent = location.origin + '/api/events'; $('#bridge-token').value = state.setup.bridgeToken; }
-    catch (error) { dialogStatus(error.message, true); }
+  try { await loadWorkspaceSetup(); }
+  catch (error) { dialogStatus(error.message, true); }
+}
+async function loadWorkspaceSetup(refresh = false) {
+  if (!liveState.setup || refresh) liveState.setup = await api('/setup');
+  state.setup = liveState.setup;
+  $('#bridge-url').textContent = location.origin + '/api/events';
+  $('#bridge-token').value = liveState.setup.bridgeToken;
+  renderHelpConfig(liveState.setup);
+  return liveState.setup;
+}
+function codexConfig(setup, includeToken = false) {
+  const quote = value => JSON.stringify(String(value));
+  const integration = setup.integration;
+  const args = [integration.proxyScript, '--name', 'Codex REA', '--', setup.rea.command, ...setup.rea.args];
+  return `[mcp_servers.agent_bay_rea]\ncommand = ${quote(integration.command)}\nargs = [\n${args.map(arg => `  ${quote(arg)},`).join('\n')}\n]\nstartup_timeout_sec = 30\n\n[mcp_servers.agent_bay_rea.env]\nAGENT_BAY_URL = ${quote(location.origin)}\nAGENT_BAY_BRIDGE_TOKEN = ${quote(includeToken ? setup.bridgeToken : 'PASTE_YOUR_TOKEN_HERE')}`;
+}
+function renderHelpConfig(setup) {
+  const ready = Boolean(setup?.integration?.command && setup.integration.proxyScript && setup.rea?.command);
+  $('#help-copy-config').disabled = !ready;
+  $('#help-codex-config').textContent = ready ? codexConfig(setup) : '# Install REA, then click Refresh to detect its local command.';
+  $('#help-config-status').textContent = ready ? 'REA detected. Copy config includes the current bridge token; the preview keeps it hidden.' : 'Local REA connection details are unavailable. Install REA and refresh this guide.';
+}
+async function refreshHelpSetup(refresh = false) {
+  try { await loadWorkspaceSetup(refresh); }
+  catch (error) {
+    $('#help-config-status').textContent = `Could not load connection details: ${error.message}`;
+    $('#help-copy-config').disabled = true;
   }
+}
+function selectHelpTopic(topic) {
+  for (const button of document.querySelectorAll('[data-help-topic]')) {
+    const active = button.dataset.helpTopic === topic;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+  }
+  for (const panel of document.querySelectorAll('[data-help-panel]')) panel.hidden = panel.dataset.helpPanel !== topic;
+  $('.preferences-content').scrollTop = 0;
+  if (topic === 'codex') void refreshHelpSetup();
+}
+function selectPreferencesTab(tab) {
+  for (const button of document.querySelectorAll('[data-preferences-tab]')) {
+    const active = button.dataset.preferencesTab === tab;
+    button.classList.toggle('active', active);
+    if (active) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
+  }
+  for (const panel of document.querySelectorAll('[data-preferences-panel]')) panel.hidden = panel.dataset.preferencesPanel !== tab;
+  $('#preferences-title').textContent = tab === 'help' ? 'Help & setup' : 'Settings';
+  $('#preferences-subtitle').textContent = tab === 'help' ? 'Connect a model, run tools, or bring your agent' : 'Appearance and connections';
+  $('#settings-page').setAttribute('aria-label', tab === 'help' ? 'Help and setup' : 'Settings');
+  $('.preferences-content').scrollTop = 0;
 }
 let preferencesContext = null;
 function updatePreferencesSummary() {
   $('#preferences-model').textContent = liveState.model ? `${liveState.model.model} · ${liveState.model.protocol}` : 'No model connected';
   const connected = liveState.connections.filter(connection => connection.status === 'connected').length;
   $('#preferences-tools').textContent = connected ? `${connected} connected ${connected === 1 ? 'server' : 'servers'}` : 'No tool servers connected';
-  for (const button of document.querySelectorAll('[data-preferences-connect]')) button.disabled = player.active;
+  for (const button of document.querySelectorAll('[data-preferences-connect],[data-help-connect]')) button.disabled = player.active;
 }
-function openPreferencesPage() {
+function openPreferencesPage(tab) {
+  if (tab) selectPreferencesTab(tab);
   if (!$('#settings-page').hidden) return;
   preferencesContext = { presentation: document.body.classList.contains('presentation'), playing: player.active && player.playing };
   if (preferencesContext.playing) player.pause();
@@ -732,15 +780,18 @@ function closePreferencesPage() {
   queueRender();
   (desktopWindow ? $('#app-settings-btn') : $('#preferences-btn')).focus();
 }
-$('#preferences-btn').onclick = openPreferencesPage;
+$('#preferences-btn').onclick = () => openPreferencesPage();
+$('#help-btn').onclick = () => { selectHelpTopic('start'); openPreferencesPage('help'); };
 $('#app-settings-btn').onclick = () => $('#settings-page').hidden ? openPreferencesPage() : closePreferencesPage();
 $('#close-settings-page').onclick = closePreferencesPage;
-for (const button of document.querySelectorAll('[data-preferences-tab]')) button.onclick = () => {
-  for (const item of document.querySelectorAll('[data-preferences-tab]')) {
-    const selected = item === button; item.classList.toggle('active', selected);
-    if (selected) item.setAttribute('aria-current', 'page'); else item.removeAttribute('aria-current');
-  }
-  for (const panel of document.querySelectorAll('[data-preferences-panel]')) panel.hidden = panel.dataset.preferencesPanel !== button.dataset.preferencesTab;
+for (const button of document.querySelectorAll('[data-preferences-tab]')) button.onclick = () => selectPreferencesTab(button.dataset.preferencesTab);
+for (const button of document.querySelectorAll('[data-help-topic]')) button.onclick = () => selectHelpTopic(button.dataset.helpTopic);
+for (const button of document.querySelectorAll('[data-help-open]')) button.onclick = () => { selectHelpTopic(button.dataset.helpOpen); openPreferencesPage('help'); };
+for (const button of document.querySelectorAll('[data-help-connect]')) button.onclick = () => openSettings(button.dataset.helpConnect);
+$('#help-refresh-config').onclick = () => refreshHelpSetup(true);
+$('#help-copy-config').onclick = async () => {
+  try { await navigator.clipboard.writeText(codexConfig(await loadWorkspaceSetup(), true)); toast('Codex configuration copied with the current bridge token'); }
+  catch { toast('Could not copy configuration. Copy the preview and add the token from Event connection.', true); }
 };
 for (const button of document.querySelectorAll('[data-preferences-connect]')) button.onclick = () => openSettings(button.dataset.preferencesConnect);
 function setTab(tab) { document.querySelectorAll('[data-tab]').forEach(el => { const active = el.dataset.tab === tab; el.classList.toggle('active', active); el.setAttribute('aria-selected', active); }); document.querySelectorAll('.tab-panel').forEach(el => el.hidden = el.id !== `tab-${tab}`); dialogStatus(''); }

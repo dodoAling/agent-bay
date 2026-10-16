@@ -75,6 +75,10 @@ The 0.3.0 Windows NSIS payload passes native acceptance for mouse-driven Setting
 
 Open **Settings** from the workspace toolbar. In the desktop app, the titlebar gear also opens this page and remains available during a demo. **Appearance** contains the Windows/macOS window-button choice cards and the active Midnight theme. **Connections** links to the existing model API, MCP tools, and external-agent dialogs. Connection editing is available outside demo playback. Returning from Settings restores the demo's playback state.
 
+Open **Help** from the toolbar or **Settings → Help & setup** for guides covering model APIs, manual REA analysis without a model, and Codex integration. The Codex guide generates MCP configuration from the current runtime's address, bundled Node executable, proxy script, and detected REA installation. **Copy config** inserts the current bridge token; the on-screen preview keeps it hidden. Refresh the guide after installing REA, and update the configuration after restarting Agent Bay. This integration reports MCP tool activity; other Codex activity requires separate events.
+
+Settings uses a compact header and grouped connection rows. Dialogs, parameter fields, help code blocks, settings content, and dropdown menus share thin blue-gray scrollbars with dark tracks.
+
 Task selection, API protocol, MCP transport, manual tools, demo options, playback speed, and video format use the same dark menus. Click an option or use Arrow keys, Home/End, typing to find an option, and Enter to confirm. Escape closes a menu; clicking outside dismisses it. Menus work inside modal dialogs, reflect disabled and dynamically updated options, and preserve form values, change events, and required-field validation.
 
 ## Connect a model API

@@ -10,7 +10,7 @@ select.themed-select-native{position:absolute!important;width:1px!important;heig
 .themed-select-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .themed-select-arrow{flex-shrink:0;font:16px/1 monospace;color:#7ea4cb;transform:translateY(-2px)}
 .themed-select-trigger[aria-expanded=true] .themed-select-arrow{transform:translateY(2px) rotate(180deg)}
-.themed-select-popover{position:fixed;inset:auto;margin:0;padding:5px;border:1px solid #34516f;border-radius:7px;background:#0d1725;color:#c6d8ec;box-shadow:0 12px 36px #0008;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;z-index:2147483000;font:12px/1.5 "Cascadia Mono",Consolas,monospace;color-scheme:dark;scrollbar-width:thin;scrollbar-color:#34516f #0d1725}
+.themed-select-popover{position:fixed;inset:auto;margin:0;padding:5px;border:1px solid #34516f;border-radius:7px;background:#0d1725;color:#c6d8ec;box-shadow:0 12px 36px #0008;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;z-index:2147483000;font:12px/1.5 "Cascadia Mono",Consolas,monospace;color-scheme:dark;scrollbar-width:thin;scrollbar-color:var(--scrollbar-thumb,#2c4057) var(--scrollbar-track,#0b1420)}
 .themed-select-popover::backdrop{background:transparent;pointer-events:none}
 .themed-select-option{position:relative;padding:8px 28px 8px 10px;border-radius:4px;min-height:32px;box-sizing:border-box;cursor:pointer;overflow-wrap:anywhere}
 .themed-select-option.is-active{background:#173451;color:#eef6ff}

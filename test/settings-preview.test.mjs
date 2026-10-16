@@ -126,6 +126,53 @@ test('Browser Settings routes each connection category without starting a connec
   });
 });
 
+test('Help builds Codex configuration from this runtime and keeps the bridge token out of the preview', options, async () => {
+  await withPage({}, async page => {
+    const fixture = { bridgeToken: 'help-fixture-token', rea: { command: 'D:\\Bundled runtime\\node.exe', args: ['D:\\Tools\\rea-agents\\scripts\\rea.mjs', 'mcp'] }, integration: { command: 'D:\\Bundled runtime\\node.exe', proxyScript: 'D:\\Agent Bay\\scripts\\mcp-proxy.mjs' } };
+    await page.route('**/api/setup', route => route.fulfill({ json: fixture }));
+    await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedConfig = text; } } }); });
+    await page.locator('#help-btn').click();
+    assert.equal(await page.locator('[data-preferences-panel="help"]').isVisible(), true);
+    await page.locator('[data-help-open="codex"]').click();
+    await page.waitForFunction(() => !document.querySelector('#help-copy-config').disabled);
+    const preview = await page.locator('#help-codex-config').textContent();
+    assert.ok(preview.includes(JSON.stringify(fixture.integration.proxyScript)), 'Windows paths are escaped for TOML');
+    assert.ok(preview.includes(JSON.stringify(new URL(page.url()).origin)), 'the configuration follows the current runtime origin');
+    assert.ok(preview.includes('PASTE_YOUR_TOKEN_HERE'));
+    assert.ok(!preview.includes(fixture.bridgeToken), 'the displayed configuration never reveals the token');
+    await page.locator('#help-copy-config').click();
+    await page.waitForFunction(() => window.copiedConfig);
+    assert.equal(await page.evaluate(() => window.copiedConfig), preview.replace('PASTE_YOUR_TOKEN_HERE', fixture.bridgeToken));
+    await page.locator('[data-help-topic="tools"]').click();
+    await page.locator('[data-help-connect="tools"]').click();
+    assert.equal(await page.locator('#tab-tools').isVisible(), true);
+    assert.equal(await page.locator('#bridge-token').inputValue(), fixture.bridgeToken, 'opening Connect after Help still initializes event details');
+    await page.locator('#close-dialog').click();
+    await page.locator('[data-help-topic="model"]').click();
+    await page.locator('[data-help-connect="model"]').click();
+    assert.equal(await page.locator('#tab-model').isVisible(), true);
+    await page.locator('#close-dialog').click();
+    await page.locator('#close-settings-page').click();
+    assert.equal(await page.locator('.toolbar').isVisible(), true);
+  });
+});
+
+test('Help reports missing REA and refreshes the configuration after local discovery changes', options, async () => {
+  await withPage({}, async page => {
+    let ready = false;
+    await page.route('**/api/setup', route => route.fulfill({ json: { bridgeToken: 'fixture-token', rea: { command: ready ? '/usr/bin/node' : '', args: ['/opt/rea/rea.mjs', 'mcp'] }, integration: { command: '/usr/bin/node', proxyScript: '/opt/agent-bay/scripts/mcp-proxy.mjs' } } }));
+    await page.locator('#help-btn').click();
+    await page.locator('[data-help-topic="codex"]').click();
+    await page.waitForFunction(() => document.querySelector('#help-config-status').textContent.includes('unavailable'));
+    assert.equal(await page.locator('#help-copy-config').isDisabled(), true);
+    ready = true;
+    await page.locator('#help-refresh-config').click();
+    await page.waitForFunction(() => !document.querySelector('#help-copy-config').disabled);
+    assert.match(await page.locator('#help-codex-config').textContent(), /\/opt\/rea\/rea\.mjs/);
+    assert.equal(await page.locator('[data-help-panel="codex"]').isVisible(), true);
+  });
+});
+
 test('Floating demo controls can be hidden and restored while recording controls stay suppressed', options, async () => {
   await withPage({ native: true }, async page => {
     await preview(page);
