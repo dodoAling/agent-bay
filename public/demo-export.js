@@ -1,5 +1,7 @@
 // Offline export uses a separate preview document. The current workspace and
 // its virtual player keep their state, including active real agent sessions.
+import { t } from './i18n.js';
+
 let exporting = false;
 
 const SCENES = new Set(['cleanroom', 'reverse', 'coding', 'research']);
@@ -7,20 +9,20 @@ const DIMENSIONS = { square: [1080, 1080], wide: [1920, 1080], portrait: [1080, 
 
 export function demoVideoPlan(options = {}) {
   const scene = options.scene || 'cleanroom';
-  if (!SCENES.has(scene)) throw new Error('Choose a valid demo scenario.');
+  if (!SCENES.has(scene)) throw new Error(t('Choose a valid demo scenario.'));
   const duration = Number(options.duration ?? (scene === 'cleanroom' ? 24.8 : 30));
-  if (![15, 24.8, 30, 60].includes(duration)) throw new Error('Demo duration must be 15, 24.8, 30, or 60 seconds.');
+  if (![15, 24.8, 30, 60].includes(duration)) throw new Error(t('Demo duration must be 15, 24.8, 30, or 60 seconds.'));
   const fps = Number(options.fps ?? 30);
-  if (![15, 24, 30].includes(fps)) throw new Error('Video frame rate must be 15, 24, or 30 fps.');
+  if (![15, 24, 30].includes(fps)) throw new Error(t('Video frame rate must be 15, 24, or 30 fps.'));
   const requestedFormat = options.format || 'square';
   const viewport = options.viewport || { width: globalThis.innerWidth || 1080, height: globalThis.innerHeight || 1080 };
   const ratio = viewport.width / Math.max(1, viewport.height);
   const format = requestedFormat === 'fit' ? ratio > 1.25 ? 'wide' : ratio < .8 ? 'portrait' : 'square' : requestedFormat;
-  if (!DIMENSIONS[format]) throw new Error('Choose a square, landscape, or portrait video.');
+  if (!DIMENSIONS[format]) throw new Error(t('Choose a square, landscape, or portrait video.'));
   const clip = Number(options.clipDuration ?? duration);
-  if (!Number.isFinite(clip) || clip <= 0 || clip > duration) throw new Error('The video clip must fit within the demo duration.');
+  if (!Number.isFinite(clip) || clip <= 0 || clip > duration) throw new Error(t('The video clip must fit within the demo duration.'));
   const frameCount = Math.round(clip * fps);
-  if (frameCount < 1) throw new Error('The video must contain at least one frame.');
+  if (frameCount < 1) throw new Error(t('The video must contain at least one frame.'));
   const [width, height] = DIMENSIONS[format];
   return { scene, sceneDuration: duration, duration: frameCount / fps, format, width, height, fps, frameCount };
 }
@@ -37,7 +39,7 @@ async function waitForPreview(iframe, scene, signal) {
     if (preview?.state()?.scene === scene) return preview;
     await new Promise(resolve => setTimeout(resolve, 30));
   }
-  throw new Error('The isolated demo preview did not load. Reload the workspace and retry.');
+  throw new Error(t('The isolated demo preview did not load. Reload the workspace and retry.'));
 }
 
 async function chooseCodec(vendor, plan, signal) {
@@ -45,7 +47,7 @@ async function chooseCodec(vendor, plan, signal) {
     checkAbort(signal);
     if (await vendor.canEncodeVideo(candidate.codec, { width: plan.width, height: plan.height, frameRate: plan.fps, quality: vendor.QUALITY_HIGH })) return candidate;
   }
-  throw new Error('This browser cannot encode video at the selected size. Use the desktop app or a browser with WebCodecs support.');
+  throw new Error(t('This browser cannot encode video at the selected size. Use the desktop app or a browser with WebCodecs support.'));
 }
 
 function rasterColors(document) {
@@ -72,8 +74,8 @@ function rasterColors(document) {
 export async function exportDemoVideo(options = {}) {
   const plan = demoVideoPlan(options), signal = options.signal;
   checkAbort(signal);
-  if (exporting) throw new Error('A video export is already running.');
-  if (typeof document === 'undefined' || typeof VideoEncoder === 'undefined') throw new Error('Video export requires a browser with WebCodecs support.');
+  if (exporting) throw new Error(t('A video export is already running.'));
+  if (typeof document === 'undefined' || typeof VideoEncoder === 'undefined') throw new Error(t('Video export requires a browser with WebCodecs support.'));
   exporting = true;
   const startedAt = performance.now();
   let iframe, output, source, canvas, encoding;
@@ -86,7 +88,7 @@ export async function exportDemoVideo(options = {}) {
     const url = new URL('/', location.href);
     url.search = new URLSearchParams({ preview: '1', export: '1', scene: plan.scene, duration: String(plan.sceneDuration), format: plan.format, autoplay: '0', controls: '0', loop: '0' }).toString();
     iframe = document.createElement('iframe');
-    iframe.title = 'Isolated demo video renderer'; iframe.tabIndex = -1;
+    iframe.title = t('Isolated demo video renderer'); iframe.tabIndex = -1;
     iframe.setAttribute('aria-hidden', 'true'); iframe.dataset.demoExportFrame = '';
     Object.assign(iframe.style, { position: 'fixed', left: '-100000px', top: '0', width: `${plan.width}px`, height: `${plan.height}px`, border: '0', pointerEvents: 'none' });
     iframe.src = url.href;
@@ -129,7 +131,7 @@ export async function exportDemoVideo(options = {}) {
     await output.finalize();
     checkAbort(signal);
     const buffer = output.target.buffer;
-    if (!buffer?.byteLength) throw new Error('The encoder did not produce video data.');
+    if (!buffer?.byteLength) throw new Error(t('The encoder did not produce video data.'));
     const blob = new Blob([buffer], { type: encoding.mimeType });
     return { ...plan, ...encoding, blob, filename: `agent-bay-${plan.scene}-${plan.format}-${plan.duration}s-${plan.fps}fps.${encoding.extension}` };
   } finally {

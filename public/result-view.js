@@ -1,5 +1,7 @@
 // Browser-independent, deliberately small readers for untrusted model/tool text.
 // No returned value contains HTML supplied by a tool or a model.
+const rvT = globalThis.agentBayT || (value => value);
+const rvTf = globalThis.agentBayTf || ((value, params = {}) => { let text = rvT(value); for (const [key, item] of Object.entries(params)) text = text.replaceAll(`{${key}}`, item); return text; });
 const rvLimits = { raw: 120_000, text: 120_000, code: 40_000, collection: 20, depth: 3, nodes: 260 };
 const rvKeywords = new Set(('const let var function return if else switch case break continue while for do try catch finally throw new class extends import export from async await yield true false null undefined void int long float double char bool public private static string using namespace def lambda None True False pass except with as and or not in is SELECT FROM WHERE JOIN INSERT UPDATE DELETE CREATE mov lea call ret push pop cmp test jmp je jne jz jnz add sub xor and or nop ldarg ldloc stloc ldstr ldc br bge mul').split(' '));
 const rvOwn = (value, key) => value != null && Object.hasOwn(value, key);
@@ -19,7 +21,7 @@ function rvNotice(text, warning = false) {
 }
 
 function rvLimitNotice(length, limit, subject = 'Content') {
-  return rvNotice(`${subject} preview truncated: showing ${limit.toLocaleString('en-US')} of ${length.toLocaleString('en-US')} characters. Export session JSON for all retained data.`, true);
+  return rvNotice(rvTf('{subject} preview truncated: showing {limit} of {length} characters. Export session JSON for all retained data.', { subject: rvT(subject), limit: limit.toLocaleString('en-US'), length: length.toLocaleString('en-US') }), true);
 }
 
 // Scan tokens before escaping them. Highlighting never reprocesses generated tags,
@@ -68,7 +70,7 @@ export function rvHighlight(source, language = '') {
 
 function rvCode(source, language = 'text') {
   const clipped = rvClip(source, rvLimits.code), label = String(language || 'text').slice(0, 40);
-  return `<div class="result-code-block"><div class="code-language"><span>${rvEscape(label)}</span><button type="button" class="result-copy" data-copy-result="code">${clipped.clipped ? 'Copy preview' : 'Copy'}</button></div>${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.code, 'Code') : ''}<pre class="result-pre result-code"><code>${rvHighlight(clipped.text, label)}</code></pre></div>`;
+  return `<div class="result-code-block"><div class="code-language"><span>${rvEscape(label)}</span><button type="button" class="result-copy" data-copy-result="code">${rvT(clipped.clipped ? 'Copy preview' : 'Copy')}</button></div>${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.code, 'Code') : ''}<pre class="result-pre result-code"><code>${rvHighlight(clipped.text, label)}</code></pre></div>`;
 }
 
 function rvInline(text) {
@@ -115,7 +117,7 @@ export function renderAgentText(source) {
   }
   if (fence) output.push(rvCode(code.join('\n'), fence.language));
   flush();
-  return `<div class="agent-markdown">${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.text, 'Response') : ''}${output.join('') || '<p class="result-note">Waiting for output…</p>'}</div>`;
+  return `<div class="agent-markdown">${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.text, 'Response') : ''}${output.join('') || `<p class="result-note">${rvT('Waiting for output…')}</p>`}</div>`;
 }
 
 function rvParseJson(text) {
@@ -135,31 +137,31 @@ export function rvExtractPayload(result) {
 
 function rvStringify(value) {
   if (typeof value === 'string') return value;
-  if (value === undefined) return 'Not provided';
+  if (value === undefined) return rvT('Not provided');
   const seen = new WeakSet();
-  try { return JSON.stringify(value, (key, item) => { if (typeof item === 'bigint') return `${item}n`; if (item && typeof item === 'object') { if (seen.has(item)) return '[Repeated or circular reference]'; seen.add(item); } return item; }, 2); }
-  catch { return '[This value cannot be serialized]'; }
+  try { return JSON.stringify(value, (key, item) => { if (typeof item === 'bigint') return `${item}n`; if (item && typeof item === 'object') { if (seen.has(item)) return rvT('[Repeated or circular reference]'); seen.add(item); } return item; }, 2); }
+  catch { return rvT('[This value cannot be serialized]'); }
 }
 
 function rvRaw(value, label, detail = '', key = 'raw') {
   const clipped = rvClip(rvStringify(value), rvLimits.raw);
   const pre = `<pre class="result-pre"><code>${rvEscape(clipped.text)}</code></pre>`;
-  return `<details class="result-details" data-result-section="${key}"><summary>${rvEscape(label)}</summary><button type="button" class="result-copy" data-copy-result="${key}">${clipped.clipped ? 'Copy preview' : 'Copy'}</button>${detail ? rvNotice(detail) : ''}${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.raw, label) : ''}${pre}</details>`;
+  return `<details class="result-details" data-result-section="${key}"><summary>${rvEscape(label)}</summary><button type="button" class="result-copy" data-copy-result="${key}">${rvT(clipped.clipped ? 'Copy preview' : 'Copy')}</button>${detail ? rvNotice(detail) : ''}${clipped.clipped ? rvLimitNotice(clipped.length, rvLimits.raw, label) : ''}${pre}</details>`;
 }
 
 function rvBounded(value) {
   let nodes = 0, shortened = false; const seen = new WeakSet();
   function visit(item, depth) {
-    if (++nodes > rvLimits.nodes) { shortened = true; return '[Summary node limit; see Raw result]'; }
-    if (typeof item === 'string' && item.length > 280) { shortened = true; return `${item.slice(0, 280)}… [String preview; ${item.length} characters total]`; }
+    if (++nodes > rvLimits.nodes) { shortened = true; return rvT('[Summary node limit; see Raw result]'); }
+    if (typeof item === 'string' && item.length > 280) { shortened = true; return `${item.slice(0, 280)}… ${rvTf('[String preview; {count} characters total]', { count: item.length })}`; }
     if (!item || typeof item !== 'object') return item;
-    if (seen.has(item)) { shortened = true; return '[Repeated or circular reference]'; } seen.add(item);
+    if (seen.has(item)) { shortened = true; return rvT('[Repeated or circular reference]'); } seen.add(item);
     const size = Array.isArray(item) ? item.length : Object.keys(item).length;
-    if (depth >= rvLimits.depth) { shortened = true; return `[${Array.isArray(item) ? 'Array' : 'Object'}: ${size} items; see Raw result]`; }
-    if (Array.isArray(item)) { const result = item.slice(0, rvLimits.collection).map(child => visit(child, depth + 1)); if (size > rvLimits.collection) { shortened = true; result.push(`[${size - rvLimits.collection} more items; see Raw result]`); } return result; }
+    if (depth >= rvLimits.depth) { shortened = true; return rvTf('[{kind}: {size} items; see Raw result]', { kind: Array.isArray(item) ? 'Array' : 'Object', size }); }
+    if (Array.isArray(item)) { const result = item.slice(0, rvLimits.collection).map(child => visit(child, depth + 1)); if (size > rvLimits.collection) { shortened = true; result.push(rvTf('[{count} more items; see Raw result]', { count: size - rvLimits.collection })); } return result; }
     const result = Object.create(null), entries = Object.entries(item);
     for (const [key, child] of entries.slice(0, rvLimits.collection)) result[key] = visit(child, depth + 1);
-    if (size > rvLimits.collection) { shortened = true; result['…'] = `[${size - rvLimits.collection} more fields; see Raw result]`; } return result;
+    if (size > rvLimits.collection) { shortened = true; result['…'] = rvTf('[{count} more fields; see Raw result]', { count: size - rvLimits.collection }); } return result;
   }
   return { value: visit(value, 0), shortened };
 }
@@ -170,7 +172,7 @@ function rvDl(entries, className) { return entries.length ? `<dl class="${classN
 function rvUniqueStrings(...values) { return [...new Set(values.flatMap(value => Array.isArray(value) ? value.filter(item => typeof item === 'string') : typeof value === 'string' ? [value] : []))]; }
 function rvTextList(title, values, className) {
   if (!values.length) return '';
-  return `<section class="result-section ${className}"><h3 class="result-section-title">${rvEscape(title)}</h3><ul>${values.slice(0, rvLimits.collection).map(value => `<li>${rvEscape(rvClip(value, 1200).text)}${value.length > 1200 ? '… [Item preview truncated; see Raw result]' : ''}</li>`).join('')}</ul>${values.length > rvLimits.collection ? rvNotice(`Showing ${rvLimits.collection} of ${values.length} items. See Raw result for the rest.`, true) : ''}</section>`;
+  return `<section class="result-section ${className}"><h3 class="result-section-title">${rvEscape(rvT(title))}</h3><ul>${values.slice(0, rvLimits.collection).map(value => `<li>${rvEscape(rvClip(value, 1200).text)}${value.length > 1200 ? `… ${rvT('[Item preview truncated; see Raw result]')}` : ''}</li>`).join('')}</ul>${values.length > rvLimits.collection ? rvNotice(rvTf('Showing {shown} of {total} items. See Raw result for the rest.', { shown: rvLimits.collection, total: values.length }), true) : ''}</section>`;
 }
 
 function rvCoverage(value) {
@@ -178,19 +180,19 @@ function rvCoverage(value) {
   if (!rvObject(value)) return '';
   const parts = [];
   if (value.status != null || value.state != null) parts.push(rvScalarText(value.status ?? value.state));
-  if (value.examined != null || value.total != null) parts.push(`${value.examined ?? '?'} / ${value.total ?? '?'} examined`);
-  if (value.exhausted === true) parts.push('Current page exhausted');
-  if (value.exhausted === false || value.next_offset != null) parts.push(`More pages available${value.next_offset != null ? ` · offset ${value.next_offset}` : ''}`);
-  if (Array.isArray(value.issues) && value.issues.length) parts.push(`${value.issues.length} issues`);
+  if (value.examined != null || value.total != null) parts.push(rvTf('{examined} / {total} examined', { examined: value.examined ?? '?', total: value.total ?? '?' }));
+  if (value.exhausted === true) parts.push(rvT('Current page exhausted'));
+  if (value.exhausted === false || value.next_offset != null) parts.push(rvT('More pages available') + (value.next_offset != null ? rvTf(' · offset {offset}', { offset: value.next_offset }) : ''));
+  if (Array.isArray(value.issues) && value.issues.length) parts.push(rvTf('{count} issues', { count: value.issues.length }));
   return parts.join(' · ');
 }
 
 function rvEvidenceClass(value) {
   const name = typeof value === 'string' ? value.toLowerCase() : '';
-  if (['obs', 'observed'].includes(name)) return ['observed', 'Observed'];
-  if (name === 'derived') return ['inferred', 'Derived'];
-  if (['inf', 'inferred'].includes(name)) return ['inferred', 'Inferred'];
-  return ['unknown', `Unknown · ${!name ? 'not reported' : ['unknown', 'unk'].includes(name) ? 'undetermined' : `unrecognized classification: ${value}`}`];
+  if (['obs', 'observed'].includes(name)) return ['observed', rvT('Observed')];
+  if (name === 'derived') return ['inferred', rvT('Derived')];
+  if (['inf', 'inferred'].includes(name)) return ['inferred', rvT('Inferred')];
+  return ['unknown', rvTf('Unknown · {detail}', { detail: !name ? rvT('not reported') : ['unknown', 'unk'].includes(name) ? rvT('undetermined') : rvTf('unrecognized classification: {value}', { value }) })];
 }
 
 function rvCodeFields(value) {
@@ -209,8 +211,8 @@ function rvRecords(page) {
   if (!rows.every(rvObject)) return '';
   const columns = [...new Set(rows.slice(0, 5).flatMap(row => Object.entries(row).filter(([, value]) => rvScalar(value)).map(([key]) => key)))].slice(0, 6);
   if (!columns.length) return '';
-  const table = `<div class="result-table-wrap"><table class="result-table"><thead><tr>${columns.map(key => `<th>${rvEscape(key)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(key => { const value = rvScalar(row[key]) ? rvScalarText(row[key]) : ''; const clipped = rvClip(value, 160); return `<td>${rvEscape(clipped.text)}${clipped.clipped ? '… [preview]' : ''}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
-  return `<section class="result-section"><h3 class="result-section-title">${rvEscape(page.collection || 'Returned records')}</h3>${table}${page.rows.length > rows.length ? rvNotice(`Showing ${rows.length} of ${page.rows.length} records. See Raw result for the rest.`) : ''}</section>`;
+  const table = `<div class="result-table-wrap"><table class="result-table"><thead><tr>${columns.map(key => `<th>${rvEscape(key)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${columns.map(key => { const value = rvScalar(row[key]) ? rvScalarText(row[key]) : ''; const clipped = rvClip(value, 160); return `<td>${rvEscape(clipped.text)}${clipped.clipped ? `… ${rvT('[preview]')}` : ''}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<section class="result-section"><h3 class="result-section-title">${rvEscape(page.collection || rvT('Returned records'))}</h3>${table}${page.rows.length > rows.length ? rvNotice(rvTf('Showing {shown} of {total} records. See Raw result for the rest.', { shown: rows.length, total: page.rows.length })) : ''}</section>`;
 }
 
 export function renderToolResult(call = {}, options = {}) {
@@ -221,34 +223,34 @@ export function renderToolResult(call = {}, options = {}) {
   const summary = rvObject(data.summary) ? data.summary : data;
   const pending = call.pending === true || !end;
   const error = !pending && (end?.ok === false || raw?.isError === true);
-  const status = pending ? ['running', 'Running'] : error ? ['error', 'Failed'] : end?.ok === true ? ['success', 'Success'] : ['unknown', 'Status not reported'];
-  const duration = Number.isFinite(end?.durationMs) && end.durationMs >= 0 ? `${end.durationMs.toLocaleString('en-US')} ms` : 'Duration not reported';
-  const header = `<div class="result-title">${rvEscape(call.name || end?.name || 'Unnamed tool')}</div><div class="result-summary"><span class="result-status ${status[0]}">${status[1]}</span><span class="result-duration">${pending ? 'Waiting for tool result' : duration}</span>${call.source || end?.source ? `<span class="result-source">${rvEscape(call.source || end.source)}</span>` : ''}</div>`;
+  const status = pending ? ['running', rvT('Running')] : error ? ['error', rvT('Failed')] : end?.ok === true ? ['success', rvT('Success')] : ['unknown', rvT('Status not reported')];
+  const duration = Number.isFinite(end?.durationMs) && end.durationMs >= 0 ? `${end.durationMs.toLocaleString('en-US')} ms` : rvT('Duration not reported');
+  const header = `<div class="result-title">${rvEscape(call.name || end?.name || rvT('Unnamed tool'))}</div><div class="result-summary"><span class="result-status ${status[0]}">${status[1]}</span><span class="result-duration">${pending ? rvT('Waiting for tool result') : duration}</span>${call.source || end?.source ? `<span class="result-source">${rvEscape(call.source || end.source)}</span>` : ''}</div>`;
   const sections = [header];
-  if (pending) sections.push(rvNotice('The tool is running. Actual results will appear when its end event arrives.'));
-  else if (raw === undefined) sections.push(rvNotice('The end event did not include result content.', true));
+  if (pending) sections.push(rvNotice(rvT('The tool is running. Actual results will appear when its end event arrives.')));
+  else if (raw === undefined) sections.push(rvNotice(rvT('The end event did not include result content.'), true));
   else {
     const preview = raw?.truncated === true ? raw : envelope.truncated === true ? envelope : data.truncated === true ? data : null;
-    if (preview) sections.push(rvNotice(`Upstream marked truncated: only a partial preview was received${Number.isFinite(preview.totalCharacters) ? `, ${preview.totalCharacters.toLocaleString('en-US')} original characters` : ''}; this is not a complete result.`, true));
+    if (preview) sections.push(rvNotice(rvTf('Upstream marked truncated: only a partial preview was received{size}; this is not a complete result.', { size: Number.isFinite(preview.totalCharacters) ? rvTf(', {count} original characters', { count: preview.totalCharacters.toLocaleString('en-US') }) : '' }), true));
     if (error) {
       const message = typeof envelope.error === 'string' ? envelope.error : typeof envelope.error?.message === 'string' ? envelope.error.message : typeof envelope.message === 'string' ? envelope.message : typeof payload === 'string' ? payload : '';
-      if (message) sections.push(`<section class="result-section"><h3 class="result-section-title">Error details</h3>${renderAgentText(message)}</section>`);
+      if (message) sections.push(`<section class="result-section"><h3 class="result-section-title">${rvT('Error details')}</h3>${renderAgentText(message)}</section>`);
     }
     const provider = envelope.provider ?? data.provider;
     const meta = [];
-    if (envelope.operation || data.operation) meta.push(['Operation', envelope.operation || data.operation]);
-    if (provider) meta.push(['Provider', rvObject(provider) ? provider.name || provider.id || 'Unnamed provider' : rvScalarText(provider)]);
+    if (envelope.operation || data.operation) meta.push([rvT('Operation'), envelope.operation || data.operation]);
+    if (provider) meta.push([rvT('Provider'), rvObject(provider) ? provider.name || provider.id || rvT('Unnamed provider') : rvScalarText(provider)]);
     const subject = envelope.subject || data.artifact || summary.artifact;
-    if (subject?.name || subject?.path || subject?.local_path) meta.push(['Target', subject.name || subject.path || subject.local_path]);
+    if (subject?.name || subject?.path || subject?.local_path) meta.push([rvT('Target'), subject.name || subject.path || subject.local_path]);
     const sha = envelope.subject?.digest?.sha256 || data.artifact?.sha256 || summary.artifact?.sha256;
     if (sha) meta.push(['SHA-256', sha]);
-    if (envelope.evidence_id) meta.push(['Evidence', envelope.evidence_id]);
+    if (envelope.evidence_id) meta.push([rvT('Evidence'), envelope.evidence_id]);
     const coverage = rvCoverage(data.coverage || summary.coverage || envelope.relationship_coverage);
-    if (coverage) meta.push(['Coverage', coverage]);
+    if (coverage) meta.push([rvT('Coverage'), coverage]);
     const [evidenceClass, evidenceLabel] = rvEvidenceClass(envelope.confidence || data.confidence || (typeof data.classification === 'string' ? data.classification : ''));
     sections.push(`<div class="result-evidence ${evidenceClass}"><span>${rvEscape(evidenceLabel)}</span>${envelope.authority ? `<span>${rvEscape(envelope.authority)}</span>` : ''}</div>`);
     const facts = [];
-    if (rvObject(data.page) && Array.isArray(data.page.rows)) facts.push([`Current page · ${data.page.collection || 'rows'}`, `${data.page.rows.length} items`]);
+    if (rvObject(data.page) && Array.isArray(data.page.rows)) facts.push([rvTf('Current page · {collection}', { collection: data.page.collection || rvT('rows') }), rvTf('{count} items', { count: data.page.rows.length })]);
     const counts = summary.metadata?.table_row_counts || data.metadata?.table_row_counts;
     if (rvObject(counts)) for (const [key, count] of Object.entries(counts).slice(0, rvLimits.collection)) if (typeof count === 'number') facts.push([`metadata · ${key}`, count]);
     const explicitCounts = summary.reported_counts || data.reported_counts;
@@ -257,7 +259,7 @@ export function renderToolResult(call = {}, options = {}) {
       if (facts.length >= 24) break;
       if (rvScalar(value) && !['code', 'pseudocode', 'assembly', 'disassembly', 'cil', 'preview', 'confidence', 'operation', 'provider'].includes(key) && String(value).length <= 180) facts.push([key, rvScalarText(value)]);
     }
-    if (facts.length) sections.push(`<section class="result-section"><h3 class="result-section-title">Summary</h3>${rvDl(facts, 'result-facts')}</section>`);
+    if (facts.length) sections.push(`<section class="result-section"><h3 class="result-section-title">${rvT('Summary')}</h3>${rvDl(facts, 'result-facts')}</section>`);
     sections.push(rvDl(meta, 'result-meta'));
     const limitations = rvUniqueStrings(envelope.limitations, data.limitations, summary !== data ? summary.limitations : []);
     const unknowns = rvUniqueStrings(envelope.unknowns, data.unknowns, summary !== data ? summary.unknowns : []);
@@ -266,16 +268,16 @@ export function renderToolResult(call = {}, options = {}) {
     const codeFields = rvCodeFields(data);
     for (const code of codeFields) sections.push(`<section class="result-section"><h3 class="result-section-title">${rvEscape(code.key)}</h3>${rvCode(code.text, code.language)}</section>`);
     sections.push(rvRecords(data.page));
-    if (preview && typeof preview.preview === 'string') sections.push(`<section class="result-section"><h3 class="result-section-title">Received truncated preview</h3>${rvCode(preview.preview, 'text')}</section>`);
+    if (preview && typeof preview.preview === 'string') sections.push(`<section class="result-section"><h3 class="result-section-title">${rvT('Received truncated preview')}</h3>${rvCode(preview.preview, 'text')}</section>`);
     else if (typeof normalized === 'string' && !error) sections.push(renderAgentText(normalized));
     else if (normalized !== undefined && !(error && Object.keys(data).every(key => ['error', 'message', 'isError'].includes(key)))) {
       const overview = rvObject(normalized) ? Object.fromEntries(Object.entries(normalized).filter(([key]) => !['limitations', 'unknowns', ...codeFields.map(code => code.key)].includes(key))) : normalized;
       const bounded = rvBounded(overview);
-      sections.push(`<details class="result-details" data-result-section="normalized"><summary>${isEvidence ? 'Normalized result · Structured details' : 'Structured details'}</summary>${bounded.shortened ? rvNotice('Summaries show up to 3 levels and 20 items per collection. Omitted details do not indicate missing upstream data. See Raw result for the rest.') : ''}${rvCode(rvStringify(bounded.value), 'json')}</details>`);
+      sections.push(`<details class="result-details" data-result-section="normalized"><summary>${rvT(isEvidence ? 'Normalized result · Structured details' : 'Structured details')}</summary>${bounded.shortened ? rvNotice(rvT('Summaries show up to 3 levels and 20 items per collection. Omitted details do not indicate missing upstream data. See Raw result for the rest.')) : ''}${rvCode(rvStringify(bounded.value), 'json')}</details>`);
     }
-    sections.push(rvRaw(raw, 'Raw result', 'The format returned by the tool is preserved. Structured content and content.text may encode the same data.'));
+    sections.push(rvRaw(raw, rvT('Raw result'), rvT('The format returned by the tool is preserved. Structured content and content.text may encode the same data.')));
   }
   const hasInput = call.startAvailable !== false && rvOwn(call, 'args');
-  sections.push(hasInput ? rvRaw(call.args, 'Input arguments', '', 'input') : `<details class="result-details" data-result-section="input"><summary>Input arguments unavailable</summary>${rvNotice(call.startAvailable === false ? 'The start event is outside the retained window; input arguments cannot be recovered.' : 'The start event did not provide input arguments.')}</details>`);
+  sections.push(hasInput ? rvRaw(call.args, rvT('Input arguments'), '', 'input') : `<details class="result-details" data-result-section="input"><summary>${rvT('Input arguments unavailable')}</summary>${rvNotice(rvT(call.startAvailable === false ? 'The start event is outside the retained window; input arguments cannot be recovered.' : 'The start event did not provide input arguments.'))}</details>`);
   return `<div class="tool-result" data-result-status="${status[0]}">${sections.join('')}</div>`;
 }

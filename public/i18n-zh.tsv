@@ -1,0 +1,818 @@
+# Agent Bay Chinese (zh) strings. Format: english<TAB>chinese. \n and \t are escapes.
+# English text is the message id; keep every row in sync with the UI sources.
+Agent Bay — live agent cockpit	Agent Bay — 实时智能体驾驶舱
+agent-bay // local control plane	agent-bay // 本地控制台
+Agent Bay × REA — clean room · oracle on	Agent Bay × REA — 净室 · 校验器开启
+CONNECTING	正在连接
+LIVE BRIDGE	实时通道
+RECONNECTING	重新连接中
+DEMO PREVIEW	演示预览
+Open settings	打开设置
+Settings	设置
+Minimize window	最小化窗口
+Minimize	最小化
+Maximize window	最大化窗口
+Maximize	最大化
+Restore window	还原窗口
+Close window	关闭窗口
+Close	关闭
+Appearance and connections	外观与连接
+Connect a model, run tools, or bring your agent	连接模型、运行工具，或接入你的智能体
+← Workspace	← 工作区
+Appearance	外观
+Connections	连接
+Help & setup	帮助与设置
+Help and setup	帮助与设置
+Window controls and workspace theme.	窗口控件与工作区主题。
+Window controls	窗口控件
+Choose the button layout for this device.	选择此设备的按钮布局。
+Windows	Windows
+Controls on the right	控件在右侧
+macOS	macOS
+Traffic lights on the left	红绿灯按钮在左侧
+Your choice is saved on this device.	你的选择会保存在此设备上。
+Window buttons are available in the desktop app.	窗口按钮在桌面应用中可用。
+Midnight	午夜
+One theme for the workspace, menus, and playback controls.	工作区、菜单与播放控件共用一套主题。
+ACTIVE	使用中
+Language	语言
+Workspace, demo, and recording text.	工作区、演示与录制文案。
+Default interface	默认界面语言
+Interface in Chinese	使用中文界面
+Choose how tasks reach your workspace.	选择任务进入工作区的方式。
+Setup guide ↗	设置指南 ↗
+Model API	模型 API
+Let Agent Bay run tasks with your model.	让 Agent Bay 用你的模型执行任务。
+No model connected	未连接模型
+Configure ↗	配置 ↗
+MCP tools	MCP 工具
+Connect REA or another local tool server.	连接 REA 或其他本地工具服务器。
+No tool servers connected	未连接工具服务器
+Manage ↗	管理 ↗
+External agent	外部智能体
+Display tool activity from Codex or your own agent.	展示来自 Codex 或自有智能体的工具活动。
+Event bridge · local connection	事件桥 · 本地连接
+Connect ↗	连接 ↗
+Model and tool connections are kept for the current session. Window appearance is saved on this device.	模型与工具连接仅保留在当前会话中。窗口外观保存在此设备上。
+Choose your workflow	选择工作流
+Step-by-step setup for models, tools, and agents.	模型、工具与智能体的分步设置。
+Get started	快速上手
+REA tools	REA 工具
+Connect Codex	连接 Codex
+01 / AUTOMATED	01 / 自动化
+Use a model	使用模型
+Connect a model API and MCP tools. Agent Bay runs the tool loop and displays the results.	连接模型 API 与 MCP 工具，Agent Bay 运行工具循环并展示结果。
+Model setup →	模型设置 →
+02 / MANUAL	02 / 手动
+Run a tool	运行工具
+Call REA or another MCP tool directly. You choose the tool and its arguments; no model is required.	直接调用 REA 或其他 MCP 工具。由你选择工具与参数，无需模型。
+Tool setup →	工具设置 →
+03 / EXTERNAL	03 / 外部
+Bring Codex	接入 Codex
+Keep using Codex and send its MCP tool activity to this workspace through a local proxy.	继续使用 Codex，通过本地代理把它的 MCP 工具活动发送到本工作区。
+Codex setup →	Codex 设置 →
+Just exploring?	只是看看？
+Demo runs simulated sessions without models or tools. Use Video on the floating playback bar to export a clip.	演示运行模拟会话，不需要模型或工具。用悬浮播放条上的「视频」导出片段。
+Run tasks with a model API	用模型 API 运行任务
+Use a cloud or local endpoint with tool calling.	使用支持工具调用的云端或本地端点。
+Configure model ↗	配置模型 ↗
+Choose the API protocol.	选择 API 协议。
+Select Chat Completions compatible or Anthropic Messages.	选择 Chat Completions 兼容协议或 Anthropic Messages。
+Enter the connection details.	填写连接信息。
+Fill in the API base URL, the provider's exact Model ID, and an API key when required. Model IDs are entered manually.	填写 API 基础 URL、服务商的准确 Model ID，必要时填 API key。Model ID 需手动输入。
+Connect and enable tools.	连接并启用工具。
+Open Connect → Tools, connect REA or another MCP server, and select the tools the model may use.	打开「连接 → 工具」，连接 REA 或其他 MCP 服务器，并选择模型可用的工具。
+Start a task.	开始任务。
+Return to the workspace, describe the task, optionally choose a target, and click Start task. Agent Bay runs up to 12 model rounds.	回到工作区，描述任务，可选目标，点击「开始任务」。Agent Bay 最多运行 12 轮模型。
+Local model	本地模型
+For Ollama, use http://127.0.0.1:11434/v1 and an installed model that supports tool calling. Leave the API key empty when authentication is not required.	使用 Ollama 时填 http://127.0.0.1:11434/v1，模型须已安装且支持工具调用。无需认证时 API key 留空。
+Configuration is checked when a task starts and is cleared when the local runtime restarts. Responses-only and other native API formats need a protocol adapter.	配置在任务启动时校验，本地运行时重启后清除。仅支持 Responses 等原生 API 格式的服务需要协议适配器。
+Analyze without a model	不用模型做分析
+Run real tools with arguments you choose.	用你选择的参数运行真实工具。
+Open tools ↗	打开工具 ↗
+Connect the tool server.	连接工具服务器。
+Open Connect → Tools → Connect REA. Use Add another MCP server for a custom stdio command or Streamable HTTP endpoint.	打开「连接 → 工具 → 连接 REA」。自定义 stdio 命令或 Streamable HTTP 端点用「添加其他 MCP 服务器」。
+Check the connection.	检查连接。
+Expand Call a tool without a model. Select binary_session, enter {}, and click Run tool. This queries status; it does not load or analyze a target.	展开「不用模型调用工具」。选择 binary_session，输入 {}，点击「运行工具」。这只是状态查询，不会加载或分析目标。
+Choose an analysis tool.	选择分析工具。
+Read its description, provide the target and parameters it requires, then run it. Arguments depend on the tool; use its schema rather than guessing.	阅读工具描述，提供它所需的目标与参数后运行。参数取决于工具，按其 schema 填写，不要猜。
+Inspect the result.	检查结果。
+The workspace shows the actual output, duration, and success or failure. Manual mode does not plan the next tool call.	工作区展示真实输出、耗时与成败。手动模式不会规划下一次工具调用。
+Analysis engine required	需要分析引擎
+Native decompilation requires an installed engine such as Hopper, Ghidra, or IDA. Listing REA tools alone does not confirm that an engine is ready. Run rea doctor to check the environment.	原生反编译需要已安装 Hopper、Ghidra 或 IDA 等引擎。仅列出 REA 工具不代表引擎就绪。运行 rea doctor 检查环境。
+Connect Codex through MCP	通过 MCP 连接 Codex
+Codex → local proxy → REA → this workspace	Codex → 本地代理 → REA → 本工作区
+Event connection ↗	事件连接 ↗
+Keep Agent Bay open.	保持 Agent Bay 打开。
+The generated configuration uses this runtime's address and detected local REA installation.	生成的配置使用本运行时地址与检测到的本地 REA 安装。
+Add the MCP configuration.	添加 MCP 配置。
+Copy the block below into ~/.codex/config.toml, alongside your existing settings. Copy config inserts the current bridge token.	把下面的代码块复制到 ~/.codex/config.toml，与现有配置并列。「复制配置」会带上当前桥接 token。
+Restart Codex and verify.	重启 Codex 并验证。
+Use /mcp to check the server, then ask Codex: Use agent_bay_rea to call binary_session with {}.	用 /mcp 检查服务器，然后让 Codex：Use agent_bay_rea to call binary_session with {}。
+Refresh	刷新
+Copy config	复制配置
+Loading local connection details…	正在加载本地连接信息…
+What appears here	这里显示什么
+The proxy reports MCP tool arguments, results, timing, and status. Codex chooses its own model. Its text output, shell commands, and other activity need separate event integration.	代理上报 MCP 工具参数、结果、耗时与状态。Codex 自选模型；它的文本输出、shell 命令等其他活动需要单独的事件接入。
+Reopen this guide and update the configuration after Agent Bay restarts; the port and token may change. 	Agent Bay 重启后重新打开本指南并更新配置，端口与 token 可能变化。
+Official Codex MCP documentation ↗	Codex MCP 官方文档 ↗
+# Install REA, then click Refresh to detect its local command.	# 请先安装 REA，然后点「刷新」检测本地命令。
+REA detected. Copy config includes the current bridge token; the preview keeps it hidden.	已检测到 REA。「复制配置」含当前桥接 token，预览中保持隐藏。
+Local REA connection details are unavailable. Install REA and refresh this guide.	本地 REA 连接信息不可用。请安装 REA 并刷新本指南。
+YOUR AGENT. YOUR TOOLS. ONE SIGNAL.	你的智能体。你的工具。同一条信号。
+Waiting for an agent	等待智能体接入
+LOCAL WORKSPACE	本地工作区
+context → tools → results · every signal leaves a trace	上下文 → 工具 → 结果 · 每条信号都有迹可循
+REA reads · SPEC.md is the wall · oracle decides	REA 读取 · SPEC.md 是边界 · 校验器裁决
+Agent Bay Studio	Agent Bay Studio
+tool calls	工具调用
+functions read	已读函数
+successful	成功
+exact match	精确匹配
+still open	仍未决
+failed calls	失败调用
+code copied	复制代码
+SESSION	会话
+New session	新会话
+STANDBY	待机
+Help	帮助
+▷ Demo	▷ 演示
+↓ Export	↓ 导出
+＋ Connect	＋ 连接
+MCP · SESSION	MCP · 会话
+REA · MCP SESSION	REA · MCP 会话
+live 	实时 
+TARGET	目标
+LOCAL	本地
+EXTERNAL	外部
+DEMO	演示
+READY	就绪
+Connect models and tools, or an existing agent	连接模型与工具，或接入现有智能体
+API offline	API 离线
+MCP offline	MCP 离线
+TOOL CALLS	工具调用
+Tool library ↗	工具库 ↗
+Waiting for the first tool call	等待第一次工具调用
+Calls appear here as live events arrive	调用会随实时事件出现在这里
+3 SIGNALS	3 项信号
+3 ORACLES	3 个校验器
+tools	工具
+byte	字节
+successful tool calls	成功的工具调用
+compiled bytes vs original	编译字节 vs 原始
+instructions + constant bytes	指令 + 常量字节
+checks	检查
+planted	埋雷
+reported verification results	已上报的验证结果
+wrong const · swapped branch · off-by-1	错常量 · 换序分支 · 差一
+runtime	运行时
+waiting	等待中
+run it, inspect it, verify it	运行、检视、验证
+build it, play it, watch it	构建、试玩、观察
+No checks reported	暂无检查上报
+Earlier check details are outside the retention window	更早的检查明细已超出保留窗口
+Checks are reported by tools or connected agents.	检查由工具或已连接的智能体上报。
+0 MCP SERVERS	0 个 MCP 服务器
+simulated tools · local	模拟工具 · 本地
+CONTEXT	上下文
+Bring the task into view	让任务进入视野
+REASON	推理
+Understand the task and plan the next step	理解任务并规划下一步
+EXECUTE	执行
+See every tool call	看清每一次工具调用
+VERIFY	验证
+Follow execution, results, and verification	跟踪执行、结果与验证
+AGENT BAY	AGENT BAY
+Any agent. One visual workspace.	任意智能体，同一个可视化工作区。
+DEMO · SIMULATED DATA	演示 · 模拟数据
+ONE WORKFLOW · TWO ROOMS	一条工作流 · 两个房间
+ONE BINARY · TWO ROOMS	一个二进制 · 两个房间
+MCP local	MCP 本地
+EVENT-DRIVEN	事件驱动
+results · DEMO	结果 · 演示
+live results	实时结果
+waiting for signals	等待信号
+oracle bytes	校验字节
+oracle bytes+const	校验字节+常量
+01 READ	01 读取
+02 CONTEXT	02 上下文
+02 SPEC.md	02 SPEC.md
+03 BUILD	03 构建
+04 CHECK	04 检查
+04 ORACLE	04 校验器
+Task and context	任务与上下文
+MODEL	模型
+Reason and plan	推理与规划
+MCP / TOOLS	MCP / 工具
+Call and execute	调用并执行
+RESULT	结果
+Results and checks	结果与检查
+SIGNAL ROUTE / 001	信号通路 / 001
+LOCAL ↔ AGENT ↔ TOOLS	本地 ↔ 智能体 ↔ 工具
+Connect a model or send events from an existing agent.	连接模型，或从现有智能体发送事件。
+ACTIVITY MAP	活动图
+One cell = one tool call	一格 = 一次工具调用
+Success	成功
+Running	运行中
+Failed	失败
+THE FACTORY · AGENT WORKFLOW	流水线 · 智能体工作流
+THE FACTORY · SECOND GAME	流水线 · 第二款游戏
+tools called	已调用工具
+REA read	REA 已读
+room A	房间 A
+room B	房间 B
+still open —	仍未决 —
+ROOM A · read context, plan the work	房间 A · 读上下文，规划工作
+ROOM A · REA reads, writes spec	房间 A · REA 读取，写规范
+ROOM B · use tools, verify results	房间 B · 用工具，验证结果
+ROOM B · spec only, then oracle	房间 B · 只看规范，再校验
+load target	加载目标
+load binary	加载二进制
+read context	读上下文
+tag obs/inf/unk	标记 obs/inf/unk
+write PLAN.md	写 PLAN.md
+write SPEC.md	写 SPEC.md
+commit NOTES.md	提交 NOTES.md
+read PLAN.md	读 PLAN.md
+read SPEC.md	读 SPEC.md
+call tools	调用工具
+build fn	构建函数
+run checks	跑检查
+run oracle	跑校验器
+retry failures	重试失败
+3 planted fail	3 个埋雷失败
+check const bytes	核对常量字节
+inspect results	检视结果
+AGENT OUTPUT	智能体输出
+TOOL DETAILS	工具详情
+LATEST TOOL RESULT	最新工具结果
+View output	查看输出
+Overview	总览
+READY WHEN YOU ARE.	随时就绪。
+See your agent	看智能体
+at work.	工作。
+Model decisions, tool calls, and results	模型决策、工具调用与结果
+unfold in a single live event stream.	在一条实时事件流中展开。
+Connect an agent 	连接智能体 
+Choose Demo to preview the workflow	选「演示」预览工作流
+FLIGHT RECORDER	飞行记录仪
+0 EVENTS	0 条事件
+Filter events…	筛选事件…
+Filter events	筛选事件
+system	系统
+Local event service ready	本地事件服务就绪
+Waiting for a task…	等待任务…
+Give your agent a task…	给智能体一个任务…
+Task description	任务描述
+Target path (optional) · D:\apps\sample.exe	目标路径（可选）· D:\apps\sample.exe
+Target file or directory path	目标文件或目录路径
+Browse file	浏览文件
+Browse folder	浏览文件夹
+■ Stop	■ 停止
+Start task 	开始任务 
+LOCAL FIRST	本地优先
+LIVE EVENTS · No active task	实时事件 · 无活动任务
+tokens	token 数
+CONFIGURE YOUR WORKSPACE	配置工作区
+Connect your workspace	连接工作区
+Close settings	关闭设置
+01 Model	01 模型
+02 Tools	02 工具
+03 Agent	03 智能体
+Connect your cloud or local model using a supported API protocol.	用支持的 API 协议连接云端或本地模型。
+API protocol	API 协议
+Chat Completions compatible	兼容 Chat Completions
+Anthropic Messages	Anthropic Messages
+API base URL	API 基础 URL
+Model ID	模型 ID
+Model ID from your provider	服务商提供的模型 ID
+API Key	API Key
+Optional for local APIs	本地 API 可留空
+Configured; re-enter to save	已配置；重新输入以保存
+The key stays in local server memory. Enter it again after a restart.	Key 仅保存在本地服务器内存中，重启后需重新输入。
+Save model connection ↗	保存模型连接 ↗
+Clear model configuration	清除模型配置
+Using a local model?	用本地模型？
+For Ollama, use http://127.0.0.1:11434/v1 and the ID of an installed model. Tool use requires a model that supports tool calling.	使用 Ollama 时填 http://127.0.0.1:11434/v1 和已安装模型的 ID。工具调用要求模型本身支持。
+Connect local REA or another standard MCP server.	连接本地 REA 或其他标准 MCP 服务器。
+Connect REA ↗	连接 REA ↗
+Add another MCP server	添加其他 MCP 服务器
+Server name	服务器名称
+Transport	传输方式
+Local stdio	本地 stdio
+Streamable HTTP	Streamable HTTP
+Executable	可执行文件
+node or the full path to an executable	node 或可执行文件的完整路径
+Arguments (JSON array)	参数（JSON 数组）
+Server URL	服务器 URL
+Bearer token (optional)	Bearer token（可选）
+Connect MCP server	连接 MCP 服务器
+AVAILABLE TOOLS	可用工具
+0 SELECTED	已选 0 个
+Search tool names…	搜索工具名…
+Search MCP tools	搜索 MCP 工具
+No tool server connected	未连接工具服务器
+Call a tool without a model	不用模型调用工具
+Select a tool	选择工具
+Connect a tool server first	请先连接工具服务器
+Arguments (JSON object)	参数（JSON 对象）
+Run tool ↗	运行工具 ↗
+Send execution events from an existing agent. Any model can be used; the agent must integrate an event emitter.	从现有智能体发送执行事件。任意模型均可，智能体需集成事件上报。
+Event endpoint	事件端点
+Event bridge token	事件桥 token
+Copy	复制
+Node.js and Python examples and a CLI emitter for hooks are included. The dashboard displays reported events and does not read private agent reasoning.	内置 Node.js 与 Python 示例及 hook 用 CLI 上报器。面板只展示上报的事件，不读取智能体的私有推理。
+Integration	集成
+Emit events before and after tool calls, or invoke scripts/emit.mjs from an available hook. Configure an adapter for your agent; entering a model name alone does not connect it.	在工具调用前后发事件，或在可用 hook 中调用 scripts/emit.mjs。为你的智能体配置适配器；只填模型名不会建立连接。
+DEMO STUDIO / NO API REQUIRED	演示工坊 / 无需 API
+Demo studio	演示工坊
+Close preview settings	关闭预览设置
+Preview the workflow with simulated calls, logs, and results. No models, REA, or other tools are invoked.	用模拟的调用、日志与结果预览工作流。不调用模型、REA 或其他工具。
+Demo scenario	演示场景
+Clean room factory · SIMULATED	净室流水线 · 模拟
+Reverse engineering · entry → call graph → report	逆向工程 · 入口 → 调用图 → 报告
+Coding agent · diagnose → fix → verify	编码智能体 · 诊断 → 修复 → 验证
+Research agent · search → compare → findings	研究智能体 · 检索 → 对比 → 结论
+Duration	时长
+24.8s · Factory scene	24.8s · 流水线场景
+15s · Quick preview	15s · 快速预览
+30s · Full workflow	30s · 完整工作流
+60s · Extended demo	60s · 加长演示
+Aspect ratio	画幅
+1:1 Square	1:1 方形
+16:9 Landscape · Video / web	16:9 横屏 · 视频/网页
+9:16 Portrait · Short video	9:16 竖屏 · 短视频
+Fit current window	适配当前窗口
+Recording mode: hide settings and task inputs	录制模式：隐藏设置与任务输入
+Loop playback	循环播放
+Recording shortcuts	录制快捷键
+Space Pause / Resume · R Replay · F Fullscreen · H Toggle controls · Esc Exit	空格 暂停/继续 · R 重播 · F 全屏 · H 显隐控件 · Esc 退出
+The SIMULATED label remains visible when controls are hidden. Seek to preview any moment.	控件隐藏时「模拟」标记仍可见。可拖动进度预览任意时刻。
+Start demo preview ↗	开始演示预览 ↗
+DEMO STUDIO	演示工坊
+Ⅱ Pause	Ⅱ 暂停
+▷ Replay	▷ 重播
+▷ Resume	▷ 继续
+R Replay	R 重播
+F Fullscreen	F 全屏
+H Hide controls	H 隐藏控件
+Demo position	演示进度
+Playback speed	播放速度
+Loop	循环
+↓ Video	↓ 视频
+Hide	隐藏
+Exit	退出
+▷ Playback controls	▷ 播放控件
+Show playback controls	显示播放控件
+Download video	下载视频
+Close video export	关闭视频导出
+Export the complete demo. Playback controls stay out of the video.	导出完整演示，播放控件不会进入画面。
+Video format	视频格式
+Square · 1080 × 1080	方形 · 1080 × 1080
+Landscape · 1920 × 1080	横屏 · 1920 × 1080
+Portrait · 1080 × 1920	竖屏 · 1080 × 1920
+30 fps · simulated session	30 fps · 模拟会话
+Export video ↓	导出视频 ↓
+Preparing video…	正在准备视频…
+Rendering {frame} / {totalFrames} frames…	正在渲染第 {frame} / {totalFrames} 帧…
+Finishing video…	正在收尾…
+Saving video…	正在保存视频…
+Cancel export	取消导出
+Video export cancelled.	视频导出已取消。
+Video export failed: {message}	视频导出失败：{message}
+Video saved	视频已保存
+Video download started	视频开始下载
+Fullscreen was denied. Use F11 instead.	全屏被拒绝，请改用 F11。
+Saving…	正在保存…
+Saved. The API connection is checked when a task starts.	已保存。API 连接在任务启动时校验。
+Model configuration saved	模型配置已保存
+Model configuration cleared	模型配置已清除
+Starting REA MCP and discovering tools…	正在启动 REA MCP 并发现工具…
+REA was not found. Add an MCP server with the Node executable and rea.mjs mcp arguments.	未找到 REA。请用 Node 可执行文件加 rea.mjs mcp 参数添加一个 MCP 服务器。
+REA connected with {count} tools. Select tools for the model or call them manually below.	REA 已连接，共 {count} 个工具。为模型勾选工具，或在下方手动调用。
+REA connected · {count} tools	REA 已连接 · {count} 个工具
+Connecting to the MCP server…	正在连接 MCP 服务器…
+Connected to {name} · {count} tools	已连接 {name} · {count} 个工具
+Tool selection updated	工具选择已更新
+Tool server disconnected	工具服务器已断开
+Tool call started	工具调用已开始
+Connect a model API before starting a task	开始任务前请先连接模型 API
+Stopping model requests and tool calls…	正在停止模型请求与工具调用…
+Codex configuration copied with the current bridge token	已复制含当前桥接 token 的 Codex 配置
+Could not copy configuration. Copy the preview and add the token from Event connection.	复制失败。请复制预览内容，并从「事件连接」获取 token。
+Could not load connection details: {message}	无法加载连接信息：{message}
+Copied current content	已复制当前内容
+Clipboard access was denied. Select and copy the text manually.	剪贴板被拒绝，请手动选择复制。
+Event bridge token copied	事件桥 token 已复制
+Copy the selected token manually	请手动复制选中的 token
+Disconnect	断开
+Session exported	会话已导出
+Could not export session: {message}	会话导出失败：{message}
+Could not select target: {message}	无法选择目标：{message}
+Could not save window style: {message}	窗口样式保存失败：{message}
+Window action failed: {message}	窗口操作失败：{message}
+RUNNING	运行中
+COMPLETED	已完成
+FAILED	失败
+STOPPED	已停止
+DEMO DATA	演示数据
+WORKING	工作中
+WAITING	等待中
+RESPONDING	响应中
+CANCELLED	已取消
+OFFLINE	离线
+DISCONNECTED	已断开
+Agent task	智能体任务
+Task started	任务已开始
+Model response ended	模型响应结束
+New artifact	新产物
+Task failed. Review the event log.	任务失败。请查看事件日志。
+TASK ERROR	任务错误
+AWAITING OUTPUT	等待输出
+Task connected. Waiting for agent output or tool events…	任务已连接。等待智能体输出或工具事件…
+Earlier tool details are outside the retention window. Lifetime totals are preserved, and new results can still arrive.	更早的工具明细已超出保留窗口。累计计数仍保留，新结果仍可到达。
+Earlier tool details are outside the retention window	更早的工具明细已超出保留窗口
+Waiting for the first tool call	等待第一次工具调用
+Running · {seconds}s	运行中 · {seconds} 秒
+{ms} ms · {result}	{ms} ms · {result}
+success	成功
+failed	失败
+running	运行中
+result captured	已捕获结果
+retry queued	已排队重试
+{count} tool call recorded	已记录 {count} 次工具调用
+{count} tool calls recorded	已记录 {count} 次工具调用
+{count} calls · {success} successful · {flagged} flagged · DEMO	{count} 次调用 · {success} 成功 · {flagged} 被标记 · 演示
+receive task → read context → plan the next move	接收任务 → 读取上下文 → 规划下一步
+read the context before you act	先读上下文再行动
+the record is the memory, not the chat	记录才是记忆，聊天不是
+every result needs a trace	每个结果都要留痕
+test the checker too	检查器也要被检查
+Check	检查
+PASS	通过
+FAIL	未过
+UNKNOWN	未知
+{total} EVENTS	{total} 条事件
+{total} EVENTS · {retained} retained	{total} 条事件 · 保留 {retained} 条
+Lifetime event count. The log shows the latest 300 non-delta events.	全周期事件数。日志显示最近 300 条非增量事件。
+{total} total events; {retained} details retained for this session. The global detail window keeps the latest {limit} events. Lifetime totals remain intact.	共 {total} 条事件；本会话保留 {retained} 条明细。全局明细窗口保留最近 {limit} 条。累计计数不受影响。
+Latest 8 retained tool calls	最近 8 条已保留的工具调用
+Counts cover the session lifetime. Only retained call details appear below.	计数覆盖整个会话周期；下方仅显示保留的调用明细。
+{success}/{total}	{success}/{total}
+still open {pending} · {note}	仍未决 {pending} · {note}
+{failures} flagged for review	{failures} 个待复核
+keep every result traceable	保持每个结果可追溯
+same checks, from zero · DEMO	同一套检查，从零开始 · 演示
+same checks, from zero	同一套检查，从零开始
+{total} actual events	{total} 条真实事件
+{total} actual events · {retained} retained	{total} 条真实事件 · 保留 {retained} 条
+step {step}	第 {step} 步
+done	完成
+{pending} tool in flight · {name}	{pending} 个工具执行中 · {name}
+{pending} tools in flight · {name}	{pending} 个工具执行中 · {name}
+Waiting for call details	等待调用明细
+Receiving model output. No tools running.	正在接收模型输出，无工具运行。
+Waiting for the next agent event.	等待下一条智能体事件。
+Reconnecting; showing the last received state.	正在重连，显示最近收到的状态。
+Ended with {pending} missing tool result. See event log.	结束时有 {pending} 个工具结果缺失，详见事件日志。
+Ended with {pending} missing tool results. See event log.	结束时有 {pending} 个工具结果缺失，详见事件日志。
+Connect a model or send agent events.	连接模型或发送智能体事件。
+{run_mode} · {total} events · {status}	{run_mode} · {total} 条事件 · {status}
+{run_mode} · {total} events · {retained} details retained · {status}	{run_mode} · {total} 条事件 · 保留 {retained} 条明细 · {status}
+LIVE EVENTS	实时事件
+SIMULATED	模拟
+ENDED	已结束
+No matching events	没有匹配的事件
+No tool server connected	未连接工具服务器
+{count} / 32 SELECTED	已选 {count} / 32 个
+connected	已连接
+Could not prepare the video for saving.	无法准备视频保存。
+Choose a valid demo scenario.	请选择有效的演示场景。
+Demo duration must be 15, 24.8, 30, or 60 seconds.	演示时长须为 15、24.8、30 或 60 秒。
+Video frame rate must be 15, 24, or 30 fps.	视频帧率须为 15、24 或 30 fps。
+Choose a square, landscape, or portrait video.	请选择方形、横屏或竖屏视频。
+The video clip must fit within the demo duration.	视频片段须不超过演示时长。
+The video must contain at least one frame.	视频至少需要一帧。
+The isolated demo preview did not load. Reload the workspace and retry.	隔离的演示预览未加载。请刷新工作区重试。
+This browser cannot encode video at the selected size. Use the desktop app or a browser with WebCodecs support.	当前浏览器无法按所选尺寸编码视频。请用桌面应用或支持 WebCodecs 的浏览器。
+A video export is already running.	已有视频导出任务在进行。
+Video export requires a browser with WebCodecs support.	视频导出需要支持 WebCodecs 的浏览器。
+The encoder did not produce video data.	编码器未产出视频数据。
+Invalid playback speed	无效的播放速度
+Unknown demo scenario	未知的演示场景
+Demo duration must be 15, 24.8, 30, or 60 seconds	演示时长须为 15、24.8、30 或 60 秒
+Isolated demo video renderer	隔离的演示视频渲染器
+Select an option	请选择
+result	结果
+Unnamed tool	未命名工具
+Unnamed provider	未命名服务商
+Running	运行中
+Failed	失败
+Success	成功
+Status not reported	未上报状态
+Waiting for tool result	等待工具结果
+Duration not reported	未上报耗时
+The tool is running. Actual results will appear when its end event arrives.	工具运行中，结束事件到达后展示真实结果。
+The end event did not include result content.	结束事件未携带结果内容。
+Upstream marked truncated: only a partial preview was received; this is not a complete result.	上游标记截断：只收到部分预览，不是完整结果。
+Upstream marked truncated: only a partial preview was received, {total} original characters; this is not a complete result.	上游标记截断：原文共 {total} 字符，只收到部分预览，不是完整结果。
+Error details	错误详情
+Operation	操作
+Provider	服务商
+Target	目标
+SHA-256	SHA-256
+Evidence	证据
+Coverage	覆盖
+Current page · {collection}	当前页 · {collection}
+{count} items	{count} 项
+Summary	摘要
+Returned records	返回记录
+Showing {shown} of {total} records. See Raw result for the rest.	显示 {shown} / {total} 条记录，其余见「原始结果」。
+Observed	已观察
+Derived	已推导
+Inferred	已推断
+Unknown · not reported	未知 · 未上报
+Unknown · undetermined	未知 · 未确定
+Unknown · unrecognized classification: {value}	未知 · 未识别的分类：{value}
+examined	已检查
+{examined} / {total} examined	已检查 {examined} / {total}
+Current page exhausted	当前页已取尽
+More pages available	还有更多页
+More pages available · offset {offset}	还有更多页 · 偏移 {offset}
+{count} issues	{count} 个问题
+Copy preview	复制预览
+{subject} preview truncated: showing {limit} of {length} characters. Export session JSON for all retained data.	{subject}预览已截断：显示 {length} 字符中的 {limit}。导出会话 JSON 可查看全部保留数据。
+Content	内容
+Code	代码
+Response	响应
+Not provided	未提供
+[Repeated or circular reference]	[重复或循环引用]
+[This value cannot be serialized]	[此值无法序列化]
+[Summary node limit; see Raw result]	[摘要节点超限；见「原始结果」]
+[String preview; {length} characters total]	[字符串预览；共 {length} 字符]
+[{kind}: {size} items; see Raw result]	[{kind}：{size} 项；见「原始结果」]
+Array	数组
+Object	对象
+[{count} more items; see Raw result]	[还有 {count} 项；见「原始结果」]
+[{count} more fields; see Raw result]	[还有 {count} 个字段；见「原始结果」]
+[Item preview truncated; see Raw result]	[条目预览已截断；见「原始结果」]
+Showing {shown} of {total} items. See Raw result for the rest.	显示 {shown} / {total} 项，其余见「原始结果」。
+[preview]	[预览]
+Waiting for output…	等待输出…
+Raw result	原始结果
+Tool arguments	工具参数
+waiting for tool data	等待工具数据
+no target loaded	未加载目标
+structured context	结构化上下文
+messages · tool results · evidence	消息 · 工具结果 · 证据
+structured context · tool results	结构化上下文 · 工具结果
+context	上下文
+spec only · no code · no addresses	只看规范 · 无代码 · 无地址
+behaviour only	只看行为
+no code · no addresses	无代码 · 无地址
+binary	二进制
+input	输入
+build	构建
+idle	空闲
+result ==	结果 ==
+result ?	结果 ?
+retry ≠	重试 ≠
+bytes ==	字节 ==
+bytes ≠	字节 ≠
+bytes ?	字节 ?
+verify	验证
+oracle	校验器
++ checks	+ 检查
++ const	+ 常量
+rejected	已拒绝
+{count} failed	{count} 个失败
+{count} / 3	{count} / 3
+retry	重试
+plant	埋雷
+ROOM A · READER	房间 A · 读取器
+ROOM B · BUILDER	房间 B · 构建器
+NOTES.md	NOTES.md
+context stays here	上下文留在这里
+code stays here	代码留在这里
+{count} total · {retained} retained	共 {count} 个 · 保留 {retained} 个
+{count} results retained	已保留 {count} 个结果
+{count} asm lines kept	已保留 {count} 行汇编
+one cell = one retained call	一格 = 一次已保留调用
+one cell = one function	一格 = 一个函数
+one cell = one function · simulated	一格 = 一个函数 · 模拟
+illustrated progress · simulated	示意进度 · 模拟
+progress illustration	进度示意
+tool call results	工具调用结果
+{count} flagged · retrying	{count} 个被标记 · 重试中
+{count} flagged	{count} 个被标记
+byte compare	字节比对
+completed {done} / {total}	已完成 {done} / {total}
+exact match {matched} / 697	精确匹配 {matched} / 697
+exact match {matched} / 697 · day {day}	精确匹配 {matched} / 697 · 第 {day} 天
+SIMULATED · {read} read · {matched} matched · {open} open · day {day}	模拟 · 已读 {read} · 匹配 {matched} · 未决 {open} · 第 {day} 天
+SIMULATED · {success} success · {failed} failed · {pending} pending	模拟 · 成功 {success} · 失败 {failed} · 挂起 {pending}
+BUG · passed the byte check	BUG · 通过了字节检查
+power check 0.0, original 128.0	校验值 0.0，原始值 128.0
+TEST THE ORACLE TOO	校验器也要测
+now comparing constant bytes	现在开始比对常量字节
+1,548 refs · 12 more wrong	1,548 处引用 · 又有 12 个错误
+LIVE EVENT PIPELINE	实时事件流水线
+READY	就绪
+Connect a tool or start a task	连接工具或开始任务
+Tools are executing	工具执行中
+Awaiting the next agent event	等待下一条智能体事件
+Task ended with an error	任务因错误结束
+Task finished	任务已完成
+Task was stopped	任务已停止
+Reconnecting to the event stream	正在重连事件流
+01 SOURCE	01 来源
+MCP / AGENT	MCP / 智能体
+{count} calls observed	已观测 {count} 次调用
+No calls received	未收到调用
+02 CONTEXT	02 上下文
+{count} events retained	已保留 {count} 条事件
+Messages · parameters	消息 · 参数
+03 TOOLS	03 工具
+Ready for a call	待调用
+{count} in flight	{count} 个执行中
+{count} calls total	共 {count} 次调用
+04 RESULTS	04 结果
+{success} success · {failed} failed	成功 {success} · 失败 {failed}
+{count} call details retained	已保留 {count} 条调用明细
+05 SESSION	05 会话
+{total} calls  /  {pending} in flight  /  {success} success  /  {failed} failed	{total} 次调用 / {pending} 执行中 / 成功 {success} / 失败 {failed}
+Result tiles = retained calls	结果方块 = 已保留调用
+Clean room factory	净室流水线
+Clean room factory · SIMULATED workflow	净室流水线 · 模拟工作流
+SIMULATED clean room: read the binary, record evidence, and pass specifications through SPEC.md.\n	模拟净室：读取二进制、记录证据，规范只通过 SPEC.md 传递。\n
+\nSIMULATED verification: byte comparison missed constants. Extend the oracle and recheck previously passed functions.\n	\n模拟验证：字节比对漏掉了常量。扩展校验器并复查已通过的函数。\n
+\nSIMULATED DATA: 697 functions read, 696 exact matches, and 1 still open.\nPromotional simulation only; this does not represent real analysis or model performance.	\n模拟数据：已读 697 个函数，696 个精确匹配，1 个仍未决。\n仅为演示动画，不代表真实分析或模型能力。
+wrong constant caught	抓到错误常量
+swapped branch caught	抓到换序分支
+off-by-one caught	抓到差一错误
+constant bytes checked	常量字节已核对
+spec verified	规范已验证
+runtime playable	运行时可玩
+Reverse engineering	逆向工程
+From entry point to an evidence-backed call graph	从入口点到有证据支撑的调用图
+Target context is ready. Locate the entry point and configuration loading, then gather evidence along the call graph.\n	目标上下文已就绪。定位入口点与配置加载，沿调用图收集证据。\n
+\nObservation: after initializing configuration, the entry point passes tasks to a dispatch table.\nCross-checking calls, string references, and error branches.\n	\n观察：初始化配置后，入口点把任务交给分发表。\n正在交叉核对调用、字符串引用与错误分支。\n
+\nAnalysis summary\n• Identified configuration loading, task dispatch, and result reporting modules.\n• Call graph evidence is organized; key branches are under review.\n• The report and pseudocode are ready for reconstruction planning.\n\nSIMULATED DATA: no real reverse engineering was performed.	\n分析摘要\n• 已识别配置加载、任务分发与结果上报模块。\n• 调用图证据已整理，关键分支复核中。\n• 报告与伪代码已就绪，可用于重建规划。\n\n模拟数据：未执行真实逆向工程。
+Entry point identified	入口点已定位
+Call graph consistent	调用图一致
+Reference evidence complete	引用证据完整
+Error branches covered	错误分支已覆盖
+Valid result structure	结果结构有效
+Analysis report generated	分析报告已生成
+Coding agent	编码智能体
+Read code, fix issues, and verify behavior	读代码、修问题、验证行为
+Task received: fix navigation after the login session expires.\nRead session management and route guards to identify the trigger.\n	收到任务：修复登录会话过期后的导航。\n阅读会话管理与路由守卫，定位触发点。\n
+\nIdentified a timing mismatch between session refresh and route checks.\nThe simulated patch unifies session state and adds expiration and retry coverage.\n	\n已定位会话刷新与路由检查之间的时序错配。\n模拟补丁统一了会话状态，并补上过期与重试覆盖。\n
+\nDelivery summary\n• Session refresh and route guards use consistent state.\n• Expiration, retry, and logout paths are covered.\n• Change notes and verification results are ready.\n\nSIMULATED DATA: no real project was modified.	\n交付摘要\n• 会话刷新与路由守卫状态已统一。\n• 过期、重试与登出路径已覆盖。\n• 变更说明与验证结果已就绪。\n\n模拟数据：未修改真实项目。
+Type check	类型检查
+Session expiration	会话过期
+Login retry	登录重试
+Logout cleanup	登出清理
+Route regression	路由回归
+Change notes	变更说明
+Research agent	研究智能体
+Find sources, cross-check evidence, and report findings	找来源、交叉验证、输出结论
+Defining research questions and evidence standards.\nSearch sources, compare differences, and produce traceable findings.\n	正在定义研究问题与证据标准。\n检索来源、比较差异，产出可追溯的结论。\n
+\nSources are organized by topic.\nComparing sources and marking common findings, differences, and open questions.\n	\n来源已按主题整理。\n正在对比各来源，标记共识、分歧与待解问题。\n
+\nResearch summary\n• Integration options are organized by protocol, deployment, and constraints.\n• Key findings include sources and verification scope.\n• The report includes a comparison table, summary, and follow-up questions.\n\nSIMULATED DATA: no real web search was performed.	\n研究摘要\n• 集成方案已按协议、部署方式与约束整理。\n• 关键结论均附来源与验证范围。\n• 报告含对比表、摘要与跟进问题。\n\n模拟数据：未执行真实联网检索。
+Sources identified	来源已确定
+Citations support findings	引用支撑结论
+Differences identified	差异已识别
+Constraints documented	约束已记录
+Comparison table complete	对比表已完成
+Report generated	报告已生成
+DEMO · All logs, results, and counts are SIMULATED. No model or REA required.	演示 · 所有日志、结果与计数均为模拟，无需模型或 REA。
+Frame-calibrated SIMULATED data. No real model or reverse engineering was run. Function counts follow the reference timeline; tool events are simulated.	逐帧校准的模拟数据。未运行真实模型或逆向工程。函数数量按参考时间轴，工具事件为模拟。
+01 / Read target context	01 / 读取目标上下文
+02 / Break down the task and plan tool calls	02 / 拆解任务并规划工具调用
+03 / Run tools and collect results and evidence	03 / 运行工具并收集结果与证据
+04 / Review results and prepare the delivery summary	04 / 复核结果并准备交付摘要
+Simulated timeout; retrying in a later call	模拟超时，稍后调用重试
+Simulated recovery: adjust tool arguments and continue the task.	模拟恢复：调整工具参数并继续任务。
+Demo complete · All data is SIMULATED. Replay or choose another scenario.	演示完成 · 全部数据为模拟。可重播或选择其他场景。
+Clean room factory demo complete · All data is SIMULATED	净室流水线演示完成 · 全部数据为模拟
+SIMULATED: one function remains open	模拟：仍有一个函数未决
+Added to the comparison table	已加入对比表
+Pending cross-check	待交叉核对
+normalize session state	统一会话状态
+handle expired credentials	处理过期凭据
+verified	已验证
+const+1 planted -> oracle says ≠ -> rejected	埋雷 const+1 -> 校验器判 ≠ -> 已拒绝
+branch≠ planted -> oracle says ≠ -> rejected	埋雷 branch≠ -> 校验器判 ≠ -> 已拒绝
+console port: auto-collect broken. 0.0 ≠ 128.0	主机移植：自动采集出错。0.0 ≠ 128.0
+oracle now compares the constant bytes too	校验器现在也比对常量字节
+1,548 float refs re-checked -> 12 more wrong	复核 1,548 处浮点引用 -> 又有 12 个错误
+fn 0x406f5 bytes == -> exact match	fn 0x406f5 字节一致 -> 精确匹配
+fn 0x4071a bytes == -> exact match	fn 0x4071a 字节一致 -> 精确匹配
+off-by-1 planted -> oracle says ≠ -> rejected	埋雷 off-by-1 -> 校验器判 ≠ -> 已拒绝
+13 fn rebuilt from spec -> exact again	按规范重建 13 个函数 -> 再次精确
+fn 0x40764 bytes == -> exact match	fn 0x40764 字节一致 -> 精确匹配
+697 fn · 696 exact · 1 open · 0 lines copied	697 个函数 · 696 精确 · 1 未决 · 0 行复制
+tag every claim: obs, inf or unk	每个论断都标记：obs、inf 或 unk
+the repo is the memory, not the chat	仓库才是记忆，聊天不是
+unknown is a valid answer	「未知」也是有效答案
+study the original. ship your own.	研究原作，交付自己的
+no code, no addresses past the wall	不越界取代码和地址
+test the oracle too	校验器也要测
+build the check first. then read anything.	先建检查，再读内容
+fn {addr} -> pseudocode -> tagged {tag}	fn {addr} -> 伪代码 -> 标记 {tag}
+{count} refs	{count} 处引用
+{count} lines	{count} 行
+{count} callers	{count} 个调用方
+{count} edges	{count} 条边
+{count} mismatch	{count} 处不匹配
+float refs	浮点引用
+const bytes	常量字节
+1,548 found	找到 1,548 处
+{d} / {total}s	{d} / {total} 秒
+day {day} / 12	第 {day} 天 / 12
+step {step} / 12 · DEMO	第 {step} 步 / 12 · 演示
+DEMO / SIMULATED	演示 / 模拟
+EXTERNAL AGENT	外部智能体
+playable	可玩
+clean room	净室
+day {day}	第 {day} 天
+{count} / 3 caught	抓到 {count} / 3 个
+complete	完成
+Waiting for the next model round	等待下一轮模型
+Session exported	会话已导出
+{source} / {name}	{source} / {name}
+x64 · PE32+ · simulated session	x64 · PE32+ · 模拟会话
+x86 · PE32 · simulated locally	x86 · PE32 · 本地模拟
+local workspace · simulated session	本地工作区 · 模拟会话
+Tool library	工具库
+REA detected	已检测到 REA
+Read context	读取上下文
+Model reasoning	模型推理
+Tool execution	工具执行
+Verify results	验证结果
+MODEL · DEMO	模型 · 演示
+local	本地
+Waiting for a call	等待调用
+Output may be incomplete: earlier events are outside the retention window. Header counts still cover the session lifetime.	输出可能不完整：早期事件已超出保留窗口。标题计数仍覆盖整个会话生命周期。
+Connect an agent	连接智能体
+Agent	智能体
+rule	规则
+# Install REA, then click Refresh to detect its local command.	# 安装 REA，然后点击“刷新”以检测其本地命令。
+{count} MCP SERVERS	{count} 个 MCP 服务器
+still open {pending}	{pending} 项仍未完成
+RESPONSE {n}	回复 {n}
+Request {round}	请求 {round}
+{count} TOOLS	{count} 个工具
+(sample)	（示例）
+(simulated)	（模拟）
+{total} total · {retained} retained	共 {total} 项 · 已保留 {retained} 项
+exact match {count} / 697 · day {day}	完全匹配 {count} / 697 · 第 {day} 天
+code	代码
+exact match {count} / 697	完全匹配 {count} / 697
+not reported	未报告
+undetermined	未确定
+rows	行
+Received truncated preview	收到的截断预览
+Summaries show up to 3 levels and 20 items per collection. Omitted details do not indicate missing upstream data. See Raw result for the rest.	摘要最多显示 3 层、每个集合 20 项。省略的细节不代表上游数据缺失。其余内容见“原始结果”。
+The format returned by the tool is preserved. Structured content and content.text may encode the same data.	保留工具返回的原始格式。结构化内容与 content.text 可能编码同一份数据。
+Input arguments	输入参数
+Input arguments unavailable	输入参数不可用
+[String preview; {count} characters total]	[字符串预览；共 {count} 个字符]
+ · offset {offset}	 · 偏移 {offset}
+Unknown · {detail}	未知 · {detail}
+unrecognized classification: {value}	无法识别的分类：{value}
+Upstream marked truncated: only a partial preview was received{size}; this is not a complete result.	上游标记为已截断：仅收到部分预览{size}；这不是完整结果。
+, {count} original characters	，共 {count} 个原始字符
+Choose an option.	请选择一个选项。
+No options available	无可用选项
+DESKTOP	桌面端
+UI	界面
+EXT	外部
+For Ollama, use	使用 Ollama 时，填入
+and an installed model that supports tool calling. Leave the API key empty when authentication is not required.	以及支持工具调用的已安装模型。无需身份验证时将 API 密钥留空。
+Expand Call a tool without a model. Select	展开“无需模型调用工具”。选择
+, enter	，输入
+, and click Run tool. This queries status; it does not load or analyze a target.	，然后点击“运行工具”。此操作仅查询状态，不会加载或分析目标。
+Native decompilation requires an installed engine such as Hopper, Ghidra, or IDA. Listing REA tools alone does not confirm that an engine is ready. Run	原生反编译需要已安装 Hopper、Ghidra 或 IDA 等引擎。仅列出 REA 工具并不代表引擎就绪。请运行
+to check the environment.	检查环境。
+Copy the block below into	将下面的代码块复制到
+, alongside your existing settings. Copy config inserts the current bridge token.	，与现有设置并列保存。“复制配置”会写入当前桥接令牌。
+Use	使用
+to check the server, then ask Codex:	检查服务器，然后让 Codex：
+Reopen this guide and update the configuration after Agent Bay restarts; the port and token may change.	Agent Bay 重启后请重新打开本指南并更新配置；端口和令牌可能会变化。
+live	实时
+step 01	第 01 步
+Start task	开始任务
+and the ID of an installed model. Tool use requires a model that supports tool calling.	以及已安装模型的 ID。使用工具需要支持工具调用的模型。
+Emit events before and after tool calls, or invoke	在工具调用前后发送事件，或调用
+from an available hook. Configure an adapter for your agent; entering a model name alone does not connect it.	（从可用的钩子中调用）。为你的智能体配置适配器；仅填写模型名称不会建立连接。
+Settings categories	设置分类
+Window button style	窗口按钮样式
+Interface language	界面语言
+Help topics	帮助主题
+Codex MCP configuration	Codex MCP 配置
+Workspace actions	工作区操作
+Select a task	选择任务
+Live workflow with reader, context boundary, conveyor, builder, verifier, and result matrix	实时工作流，包含读取器、上下文边界、传送带、构建器、验证器和结果矩阵
+Tool call status matrix	工具调用状态矩阵

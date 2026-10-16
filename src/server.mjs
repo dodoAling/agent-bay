@@ -11,7 +11,7 @@ import { playDemo } from './demo.mjs';
 
 const publicDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const STATIC = new Map([['/', ['index.html', 'text/html']], ['/app.js', ['app.js', 'text/javascript']], ['/styles.css', ['styles.css', 'text/css']], ['/factory-theme.css', ['factory-theme.css', 'text/css']], ['/factory-view.js', ['factory-view.js', 'text/javascript']], ['/demo-player.js', ['demo-player.js', 'text/javascript']], ['/demo-scenarios.js', ['demo-scenarios.js', 'text/javascript']]]);
-for (const [file, mime] of [['settings.css', 'text/css'], ['themed-select.css', 'text/css'], ['themed-select.js', 'text/javascript'], ['demo-export.js', 'text/javascript'], ['vendor/demo-export-vendor.js', 'text/javascript']]) STATIC.set(`/${file}`, [file, mime]);
+for (const [file, mime] of [['settings.css', 'text/css'], ['themed-select.css', 'text/css'], ['themed-select.js', 'text/javascript'], ['demo-export.js', 'text/javascript'], ['vendor/demo-export-vendor.js', 'text/javascript'], ['i18n.js', 'text/javascript'], ['i18n-zh.tsv', 'text/tab-separated-values']]) STATIC.set(`/${file}`, [file, mime]);
 
 export function createApp({ bridgeToken = process.env.AGENT_BAY_BRIDGE_TOKEN || randomBytes(24).toString('hex') } = {}) {
   const store = new EventStore();

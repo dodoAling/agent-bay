@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 export const SCENARIOS = {
   cleanroom: {
     name: 'Clean room factory', subtitle: 'Clean room factory · SIMULATED workflow', target: 'game.exe', model: 'DEMO AGENT', source: 'REA / DEMO', count: 697,
@@ -38,39 +40,39 @@ export function buildDemoPlan({ scene = 'reverse', duration = 30, id = 'preview-
   if (![15, 24.8, 30, 60].includes(Number(duration))) throw new Error('Demo duration must be 15, 24.8, 30, or 60 seconds');
   if (scene === 'cleanroom') return buildCleanroomPlan({ duration, id, startedAt });
   const preset = SCENARIOS[scene], totalMs = Number(duration) * 1000;
-  const run = { id, title: `${preset.name} / ${preset.subtitle}`, model: preset.model, source: 'demo', mode: 'demo', target: preset.target, status: 'running', stage: 'observe', startedAt, endedAt: null };
+  const run = { id, title: `${t(preset.name)} / ${t(preset.subtitle)}`, model: preset.model, source: 'demo', mode: 'demo', target: preset.target, status: 'running', stage: 'observe', startedAt, endedAt: null };
   const entries = [];
   const add = (ratio, event) => entries.push({ t: Math.round(ratio * totalMs), event: { runId: id, source: 'demo', ...event } });
   add(0, { type: 'run.start', title: run.title, run: { ...run } });
-  add(.006, { type: 'log', message: 'DEMO · All logs, results, and counts are SIMULATED. No model or REA required.' });
-  add(.012, { type: 'stage', stage: 'observe', message: '01 / Read target context' });
-  add(.055, { type: 'stage', stage: 'reason', message: '02 / Break down the task and plan tool calls' });
+  add(.006, { type: 'log', message: t('DEMO · All logs, results, and counts are SIMULATED. No model or REA required.') });
+  add(.012, { type: 'stage', stage: 'observe', message: t('01 / Read target context') });
+  add(.055, { type: 'stage', stage: 'reason', message: t('02 / Break down the task and plan tool calls') });
   add(.06, { type: 'model.start', messageId: 'demo-output', model: preset.model, round: 1 });
   const typeText = (text, start, end) => {
     const chunks = text.match(/.{1,5}/gs) || [];
     chunks.forEach((text, i) => add(start + (end - start) * i / Math.max(1, chunks.length - 1), { type: 'model.delta', messageId: 'demo-output', text }));
   };
-  typeText(preset.intro, .065, .17);
-  add(.18, { type: 'stage', stage: 'execute', message: '03 / Run tools and collect results and evidence' });
+  typeText(t(preset.intro), .065, .17);
+  add(.18, { type: 'stage', stage: 'execute', message: t('03 / Run tools and collect results and evidence') });
   for (let i = 0; i < preset.count; i++) {
     const ratio = i < 8 ? 0 : .025 + .80 * (i - 8) / (preset.count - 8);
     const name = preset.tools[i % preset.tools.length], callId = `demo-call-${i}`;
     const failed = i === Math.floor(preset.count * .32) || i === Math.floor(preset.count * .61);
-    const args = scene === 'reverse' ? { procedure: `fn_${(0x404000 + i * 48).toString(16)}` } : scene === 'coding' ? { path: ['src/session.ts', 'src/router.ts', 'test/session.test.ts'][i % 3], task: i + 1 } : { topic: ['API protocol', 'Deployment', 'Tool calling'][i % 3], source: i + 1 };
+    const args = scene === 'reverse' ? { procedure: `fn_${(0x404000 + i * 48).toString(16)}` } : scene === 'coding' ? { path: ['src/session.ts', 'src/router.ts', 'test/session.test.ts'][i % 3], task: i + 1 } : { topic: t(['API protocol', 'Deployment', 'Tool calling'][i % 3]), source: i + 1 };
     add(ratio, { type: 'tool.start', callId, name, source: preset.source, args });
-    const result = failed ? { demo: true, error: 'Simulated timeout; retrying in a later call' } : scene === 'reverse' ? { demo: true, procedure: args.procedure, pseudocode: `int ${args.procedure}(Task *task) {\n  if (!task) return -1;\n  return dispatch(task->kind, task);\n}`, evidence: ['entry', 'callsite', 'string reference'] } : scene === 'coding' ? { demo: true, path: args.path, changes: ['normalize session state', 'handle expired credentials'], status: 'verified' } : { demo: true, topic: args.topic, conclusion: 'Added to the comparison table', confidence: 'Pending cross-check' };
+    const result = failed ? { demo: true, error: t('Simulated timeout; retrying in a later call') } : scene === 'reverse' ? { demo: true, procedure: args.procedure, pseudocode: `int ${args.procedure}(Task *task) {\n  if (!task) return -1;\n  return dispatch(task->kind, task);\n}`, evidence: ['entry', 'callsite', 'string reference'].map(t) } : scene === 'coding' ? { demo: true, path: args.path, changes: ['normalize session state', 'handle expired credentials'].map(t), status: t('verified') } : { demo: true, topic: args.topic, conclusion: t('Added to the comparison table'), confidence: t('Pending cross-check') };
     result.lines = 20 + i * 17 % 41;
     result.classification = ['obs', 'inf', 'obs', 'unk'][i % 4];
     if (scene === 'reverse' && !failed) result.assembly = ['CMP EAX, 0x5c', `JZ  loc_${(0x401000 + i * 32).toString(16)}`, 'MOV EDX, 0x64', 'CALL dispatch', 'FLD [0x4b2c10]', 'RET'];
     add(i < 7 ? 0 : ratio + .015, { type: 'tool.end', callId, name, source: preset.source, ok: !failed, durationMs: Math.round(totalMs * .015), result });
-    if (failed) add(ratio + .016, { type: 'log', message: 'Simulated recovery: adjust tool arguments and continue the task.' });
+    if (failed) add(ratio + .016, { type: 'log', message: t('Simulated recovery: adjust tool arguments and continue the task.') });
   }
-  typeText(preset.middle, .41, .68);
-  add(.78, { type: 'stage', stage: 'verify', message: '04 / Review results and prepare the delivery summary' });
-  preset.checks.forEach((name, i) => add(.79 + i * .017, { type: 'check', name: `${name} (sample)`, status: 'passed' }));
-  typeText(preset.outro, .81, .905);
+  typeText(t(preset.middle), .41, .68);
+  add(.78, { type: 'stage', stage: 'verify', message: t('04 / Review results and prepare the delivery summary') });
+  preset.checks.forEach((name, i) => add(.79 + i * .017, { type: 'check', name: `${t(name)} ${t('(sample)')}`, status: 'passed' }));
+  typeText(t(preset.outro), .81, .905);
   add(.92, { type: 'model.end', messageId: 'demo-output', usage: {} });
-  add(.94, { type: 'run.end', status: 'completed', message: 'Demo complete · All data is SIMULATED. Replay or choose another scenario.' });
+  add(.94, { type: 'run.end', status: 'completed', message: t('Demo complete · All data is SIMULATED. Replay or choose another scenario.') });
   entries.sort((a, b) => a.t - b.t);
   entries.forEach((entry, index) => { entry.event.id = index + 1; entry.event.at = startedAt + entry.t; });
   return { run, entries, totalMs, scene, preset };
@@ -78,10 +80,10 @@ export function buildDemoPlan({ scene = 'reverse', duration = 30, id = 'preview-
 
 function buildCleanroomPlan({ duration, id, startedAt }) {
   const scene = 'cleanroom', preset = SCENARIOS.cleanroom, totalMs = Number(duration) * 1000;
-  const run = { id, title: `${preset.name} / ${preset.subtitle}`, model: preset.model, source: 'demo', mode: 'demo', target: preset.target, status: 'running', stage: 'observe', startedAt, endedAt: null };
+  const run = { id, title: `${t(preset.name)} / ${t(preset.subtitle)}`, model: preset.model, source: 'demo', mode: 'demo', target: preset.target, status: 'running', stage: 'observe', startedAt, endedAt: null };
   const entries = [], add = (time, event) => entries.push({ t: Math.round(time / REFERENCE_DURATION_MS * totalMs), event: { runId: id, source: 'demo', ...event } });
   add(0, { type: 'run.start', title: run.title, run: { ...run } });
-  add(0, { type: 'log', message: 'Frame-calibrated SIMULATED data. No real model or reverse engineering was run. Function counts follow the reference timeline; tool events are simulated.' });
+  add(0, { type: 'log', message: t('Frame-calibrated SIMULATED data. No real model or reverse engineering was run. Function counts follow the reference timeline; tool events are simulated.') });
   add(0, { type: 'model.start', messageId: 'demo-output', model: preset.model, round: 1 });
   for (const [time, stage] of [[0, 'observe'], [950, 'reason'], [1800, 'execute'], [17033, 'verify']]) add(time, { type: 'stage', stage });
   let read = 0, matched = 0;
@@ -97,14 +99,14 @@ function buildCleanroomPlan({ duration, id, startedAt }) {
       add(frame.seconds * 1000, { type: 'tool.end', callId: `demo-call-${index}`, name: preset.tools[index % preset.tools.length], source: preset.source, ok: true, durationMs: 180 + index % 7 * 20, result: { demo: true, procedure, lines: 20 + index * 17 % 41, classification: ['obs', 'inf', 'obs', 'unk'][index % 4], assembly: ['RET', 'CMP EAX, 0x5c', `JZ  0x${(0x180120000 + index * 11).toString(16)}`, 'CMP EAX, 0x5b', 'MOV EDX, 0x64', 'CALL sound_init', 'FLD [0x4b2c10]'] } });
     }
   }
-  add(22500, { type: 'tool.end', callId: 'demo-call-696', name: 'decompile', source: preset.source, ok: false, durationMs: 750, result: { demo: true, classification: 'unk', error: 'SIMULATED: one function remains open' } });
-  preset.checks.forEach((name, i) => add([8250, 12100, 20800, 21200, 21800, 22600][i], { type: 'check', name: `${name} (simulated)`, status: 'passed' }));
-  for (const [text, start, end] of [[preset.intro, 0, 4000], [preset.middle, 15000, 19500], [preset.outro, 21600, 22800]]) {
+  add(22500, { type: 'tool.end', callId: 'demo-call-696', name: 'decompile', source: preset.source, ok: false, durationMs: 750, result: { demo: true, classification: 'unk', error: t('SIMULATED: one function remains open') } });
+  preset.checks.forEach((name, i) => add([8250, 12100, 20800, 21200, 21800, 22600][i], { type: 'check', name: `${t(name)} ${t('(simulated)')}`, status: 'passed' }));
+  for (const [text, start, end] of [[t(preset.intro), 0, 4000], [t(preset.middle), 15000, 19500], [t(preset.outro), 21600, 22800]]) {
     const chunks = text.match(/.{1,5}/gs) || [];
     chunks.forEach((text, i) => add(start + (end - start) * i / Math.max(1, chunks.length - 1), { type: 'model.delta', messageId: 'demo-output', text }));
   }
   add(22900, { type: 'model.end', messageId: 'demo-output', usage: {} });
-  add(23300, { type: 'run.end', status: 'completed', message: 'Clean room factory demo complete · All data is SIMULATED' });
+  add(23300, { type: 'run.end', status: 'completed', message: t('Clean room factory demo complete · All data is SIMULATED') });
   entries.sort((a, b) => a.t - b.t);
   entries.forEach((entry, index) => { entry.event.id = index + 1; entry.event.at = startedAt + entry.t; });
   return { run, entries, totalMs, scene, preset };
@@ -121,6 +123,8 @@ function buildCleanroomPlan({ duration, id, startedAt }) {
  * Runtime: clean-room/playable header template classification; progress: bar width.
  * The source video is a visual reference; these values describe a simulation, not a live run.
  */
+const refT = globalThis.agentBayT || (value => value);
+const refTf = globalThis.agentBayTf || ((value, params = {}) => { let text = refT(value); for (const [key, item] of Object.entries(params)) text = text.replaceAll(`{${key}}`, item); return text; });
 export const REFERENCE_DURATION_MS = 24800;
 export const REFERENCE_FRAMES = 744;
 const FRAME_ROWS = [
@@ -904,10 +908,10 @@ const LOG_RULES = [
 const LOG_READS = [0, 15, 44, 73, 102, 131, 160, 189, 218, 247, 276, 305, 334, 363, 392, 421, 450, 480, 509, 538];
 function referenceLog(index) {
   const read = LOG_READS.findLastIndex(frame => frame <= index), event = LOG_EVENTS.findLast(([frame]) => frame <= index);
-  const line = event && event[0] > LOG_READS[read] ? { frame: event[0], type: event[1], text: event[2] }
-    : { frame: LOG_READS[read], type: 'rea', text: `fn 0x${(0x404ca + read * 0x25).toString(16)} -> pseudocode -> tagged ${LOG_TAGS[read]}` };
+  const line = event && event[0] > LOG_READS[read] ? { frame: event[0], type: event[1], text: refT(event[2]) }
+    : { frame: LOG_READS[read], type: 'rea', text: refTf('fn {addr} -> pseudocode -> tagged {tag}', { addr: `0x${(0x404ca + read * 0x25).toString(16)}`, tag: LOG_TAGS[read] }) };
   // The event row keeps the day it was written; the rule row follows the current day.
-  return { ...line, day: REFERENCE_STATES[line.frame].day, rule: LOG_RULES.findLast(([frame]) => frame <= index)[1] };
+  return { ...line, day: REFERENCE_STATES[line.frame].day, rule: refT(LOG_RULES.findLast(([frame]) => frame <= index)[1]) };
 }
 // NOTES.md starts with six d01 entries (0x403ec…) and commits each REA read one
 // beat later, dated on commit; the panel lists the latest eight.
@@ -1034,11 +1038,15 @@ const FEED_CALLS = [
 ];
 // Share of the 44 px row slide completed on each frame after a call lands.
 const FEED_SLIDE = [.02, .2, .48, .77, .95, 1];
+const refFeedResult = result => {
+  const match = String(result).match(/^([\d,]+) (refs|lines|callers|edges|found|mismatch)$/);
+  return match ? refTf(`{count} ${match[2]}`, { count: match[1] }) : refT(result);
+};
 export function referenceFeed(seconds) {
   const frame = seconds * 30, landed = FEED_CALLS.filter(([start]) => start <= frame);
   const newest = landed.at(-1), age = frame - newest[0], step = Math.floor(age);
   const slide = newest[0] < 0 || step >= FEED_SLIDE.length - 1 ? 1 : FEED_SLIDE[step] + (FEED_SLIDE[step + 1] - FEED_SLIDE[step]) * (age - step);
-  return { slide, fresh: newest[0] >= 0, calls: landed.slice(-9).reverse().map(([, tool, arg, result, tag]) => ({ tool, arg, result, tag })) };
+  return { slide, fresh: newest[0] >= 0, calls: landed.slice(-9).reverse().map(([, tool, arg, result, tag]) => ({ tool, arg: refT(arg), result: refFeedResult(result), tag })) };
 }
 function roomPulse(seconds, pulses) {
   const cycle = Math.floor(seconds / .968);

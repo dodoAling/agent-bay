@@ -1,3 +1,7 @@
+// This file is also loaded standalone in tests, so it reads the language
+// runtime through the globals i18n.js installs instead of importing it.
+const t = msgid => globalThis.agentBayT ? globalThis.agentBayT(msgid) : msgid;
+
 const tsControllers = new WeakMap();
 const tsInstances = new Set();
 const tsRoots = new WeakMap();
@@ -13,7 +17,7 @@ function tsLabel(select) {
     clone.querySelectorAll('select,button,input,textarea,svg,.themed-select').forEach(node => node.remove());
     return clone.textContent.trim();
   }).filter(Boolean);
-  return labels.join(' ') || select.title || 'Select an option';
+  return labels.join(' ') || select.title || t('Select an option');
 }
 
 class ThemedSelect {
@@ -49,7 +53,7 @@ class ThemedSelect {
     this.focusHandler = () => { if (!this.button.disabled) this.button.focus(); };
     this.nativeClickHandler = event => { event.preventDefault(); this.focusHandler(); if (!this.button.disabled) this.open(); };
     this.invalidHandler = event => {
-      event.preventDefault(); this.invalid = true; this.note.textContent = this.select.validationMessage || 'Choose an option.'; this.note.hidden = false;
+      event.preventDefault(); this.invalid = true; this.note.textContent = this.select.validationMessage || t('Choose an option.'); this.note.hidden = false;
       this.button.setAttribute('aria-invalid', 'true'); this.button.setAttribute('aria-describedby', [this.select.getAttribute('aria-describedby'), this.note.id].filter(Boolean).join(' ')); this.focusHandler();
     };
     select.addEventListener('change', this.changeHandler); select.addEventListener('focus', this.focusHandler);
@@ -65,7 +69,7 @@ class ThemedSelect {
     const disabled = this.select.matches(':disabled'), hidden = this.select.hidden;
     if (this.button.disabled !== disabled) this.button.disabled = disabled;
     if (this.wrapper.hidden !== hidden) this.wrapper.hidden = hidden;
-    const selected = this.select.selectedOptions[0], value = selected?.label || selected?.textContent || 'No options available';
+    const selected = this.select.selectedOptions[0], value = selected?.label || selected?.textContent || t('No options available');
     if (this.value.textContent !== value) this.value.textContent = value;
     this.button.title = this.select.title || value;
     this.button.setAttribute('aria-label', tsLabel(this.select));
@@ -106,7 +110,7 @@ class ThemedSelect {
       item.textContent = option.label || option.textContent; item.setAttribute('aria-label', item.textContent); fragment.append(item);
     });
     if (!fragment.childNodes.length) {
-      const empty = this.doc.createElement('div'); empty.className = 'themed-select-empty'; empty.textContent = 'No options available'; fragment.append(empty);
+      const empty = this.doc.createElement('div'); empty.className = 'themed-select-empty'; empty.textContent = t('No options available'); fragment.append(empty);
     }
     this.popup.replaceChildren(fragment);
     if (!tsEligible(this.select.options[this.active] || { disabled: true })) this.active = [...this.select.options].findIndex(tsEligible);

@@ -7,6 +7,8 @@
  * Runtime: clean-room/playable header template classification; progress: bar width.
  * The source video is a visual reference; these values describe a simulation, not a live run.
  */
+const refT = globalThis.agentBayT || (value => value);
+const refTf = globalThis.agentBayTf || ((value, params = {}) => { let text = refT(value); for (const [key, item] of Object.entries(params)) text = text.replaceAll(`{${key}}`, item); return text; });
 export const REFERENCE_DURATION_MS = 24800;
 export const REFERENCE_FRAMES = 744;
 const FRAME_ROWS = [
@@ -790,10 +792,10 @@ const LOG_RULES = [
 const LOG_READS = [0, 15, 44, 73, 102, 131, 160, 189, 218, 247, 276, 305, 334, 363, 392, 421, 450, 480, 509, 538];
 function referenceLog(index) {
   const read = LOG_READS.findLastIndex(frame => frame <= index), event = LOG_EVENTS.findLast(([frame]) => frame <= index);
-  const line = event && event[0] > LOG_READS[read] ? { frame: event[0], type: event[1], text: event[2] }
-    : { frame: LOG_READS[read], type: 'rea', text: `fn 0x${(0x404ca + read * 0x25).toString(16)} -> pseudocode -> tagged ${LOG_TAGS[read]}` };
+  const line = event && event[0] > LOG_READS[read] ? { frame: event[0], type: event[1], text: refT(event[2]) }
+    : { frame: LOG_READS[read], type: 'rea', text: refTf('fn {addr} -> pseudocode -> tagged {tag}', { addr: `0x${(0x404ca + read * 0x25).toString(16)}`, tag: LOG_TAGS[read] }) };
   // The event row keeps the day it was written; the rule row follows the current day.
-  return { ...line, day: REFERENCE_STATES[line.frame].day, rule: LOG_RULES.findLast(([frame]) => frame <= index)[1] };
+  return { ...line, day: REFERENCE_STATES[line.frame].day, rule: refT(LOG_RULES.findLast(([frame]) => frame <= index)[1]) };
 }
 // NOTES.md starts with six d01 entries (0x403ec…) and commits each REA read one
 // beat later, dated on commit; the panel lists the latest eight.
@@ -920,11 +922,15 @@ const FEED_CALLS = [
 ];
 // Share of the 44 px row slide completed on each frame after a call lands.
 const FEED_SLIDE = [.02, .2, .48, .77, .95, 1];
+const refFeedResult = result => {
+  const match = String(result).match(/^([\d,]+) (refs|lines|callers|edges|found|mismatch)$/);
+  return match ? refTf(`{count} ${match[2]}`, { count: match[1] }) : refT(result);
+};
 export function referenceFeed(seconds) {
   const frame = seconds * 30, landed = FEED_CALLS.filter(([start]) => start <= frame);
   const newest = landed.at(-1), age = frame - newest[0], step = Math.floor(age);
   const slide = newest[0] < 0 || step >= FEED_SLIDE.length - 1 ? 1 : FEED_SLIDE[step] + (FEED_SLIDE[step + 1] - FEED_SLIDE[step]) * (age - step);
-  return { slide, fresh: newest[0] >= 0, calls: landed.slice(-9).reverse().map(([, tool, arg, result, tag]) => ({ tool, arg, result, tag })) };
+  return { slide, fresh: newest[0] >= 0, calls: landed.slice(-9).reverse().map(([, tool, arg, result, tag]) => ({ tool, arg: refT(arg), result: refFeedResult(result), tag })) };
 }
 function roomPulse(seconds, pulses) {
   const cycle = Math.floor(seconds / .968);

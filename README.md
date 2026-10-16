@@ -79,6 +79,8 @@ Open **Help** from the toolbar or **Settings → Help & setup** for guides cover
 
 Settings uses a compact header and grouped connection rows. Dialogs, parameter fields, help code blocks, settings content, and dropdown menus share thin blue-gray scrollbars with dark tracks.
 
+The **Language** card under **Appearance** switches the workspace, demos, and recordings between English and &#x4E2D;&#x6587;. The choice is saved in the browser and applied without restarting; English remains the fallback whenever a string has no translation. Chinese text lives in `public/i18n-zh.tsv`, one `english<TAB>chinese` row per message, with English source text as the key — this keeps `check:english` byte-level coverage intact.
+
 Task selection, API protocol, MCP transport, manual tools, demo options, playback speed, and video format use the same dark menus. Click an option or use Arrow keys, Home/End, typing to find an option, and Enter to confirm. Escape closes a menu; clicking outside dismisses it. Menus work inside modal dialogs, reflect disabled and dynamically updated options, and preserve form values, change events, and required-field validation.
 
 ## Connect a model API
