@@ -411,3 +411,64 @@ body:not(.presentation) .agent-markdown a{color:#76bcff;text-underline-offset:3p
 .presentation.reference-scene .status-dot{width:10px;height:10px;flex-shrink:0;background:linear-gradient(90deg,#c9d6e6 50%,transparent 50%);box-shadow:inset 0 0 0 1.5px #c9d6e6}
 .presentation.reference-scene.reference-playable .status-dot{background:#45d0f0;box-shadow:none}
 .presentation.reference-scene.reference-playable #model-label{color:#45d0f0}
+
+/* Square presentation spacing measured against the 1080 × 1080 reference (ink boxes and panel rules per region). */
+body.presentation[data-format=square] main{grid-template-columns:301px minmax(0,1fr)}
+body.presentation[data-format=square] .titlebar>span{transform:translateY(-2px)}
+body.presentation[data-format=square] .brand-sub{gap:10.2px;letter-spacing:.6px}
+body.presentation[data-format=square] .brand-sub .status-dot{margin-right:1px}
+body.presentation[data-format=square] .metrics{gap:4px 32px;transform:translateY(3px)}
+body.presentation[data-format=square] .rail-session-header{margin:0 7px 11px 8px;transform:translateY(1px)}
+body.presentation[data-format=square] .rail-live{font-size:10px}
+body.presentation[data-format=square] .target-card{padding:9px 12px 7px 14px}
+body.presentation[data-format=square] .target-card>.section-label::before{font-size:10px;letter-spacing:.3px}
+body.presentation[data-format=square] #connection-chips{margin:-1px 0 0 -2px}
+body.presentation.reference-scene[data-format=square] #connection-chips span{font-size:10px;line-height:17px;padding:0 7.5px}
+body.presentation[data-format=square] .tool-item{padding:1px 13px 3px}
+body.presentation[data-format=square] .tool-meta{margin-top:2px;gap:7px}
+body.presentation[data-format=square] .tool-meta .evidence-dot{width:6px;height:6px}
+body.presentation[data-format=square] .checks-section{padding-top:10px}
+body.presentation[data-format=square] .checks-section>.section-label{letter-spacing:0}
+body.presentation[data-format=square] .checks-section>.section-label+.signal{margin-top:10px}
+body.presentation[data-format=square] .signal{margin-top:10.5px}
+body.presentation[data-format=square] .signal b{font-size:13px}
+body.presentation[data-format=square] .signal>i{height:6px;margin-top:4px}
+body.presentation[data-format=square] .signal small{margin-top:5px;letter-spacing:.3px}
+body.presentation[data-format=square] .rail-bottom{height:22.8px;font-size:11px;line-height:11px;letter-spacing:0;padding:0 9px;align-items:flex-start}
+body.presentation[data-format=square] .rail-bottom>.dot,body.presentation[data-format=square] .rail-bottom>span:last-child{display:none}
+body.presentation[data-format=square] .flow-panel>.panel-heading{padding:0 14px 0 25px;gap:12px;transform:translateY(2px)}
+body.presentation[data-format=square] .flow-panel .section-label{letter-spacing:0}
+body.presentation[data-format=square] #flow-source{flex:0 0 166.7px;text-align:right}
+body.presentation[data-format=square] .factory-progress{padding:14px 14px 14px 24px}
+body.presentation[data-format=square] .factory-progress-heading{letter-spacing:0;margin-bottom:7px}
+body.presentation[data-format=square] .factory-progress-row{grid-template-columns:146px 333px 1fr 56px}
+body.presentation[data-format=square] .factory-progress-row strong{margin-left:-2px}
+body.presentation[data-format=square] .factory-progress-row small{font-size:12px}
+body.presentation[data-format=square] .factory-progress-foot{margin-top:-2px}
+body.presentation[data-format=square] .room-actions .room-chips{row-gap:4px;margin-left:-1px}
+body.presentation[data-format=square] .room-chips span{padding:4px 8px}
+body.presentation[data-format=square] .room-actions h3{transform:translateY(-1px)}
+body.presentation[data-format=square] .timeline-panel{padding-top:8px}
+body.presentation[data-format=square] .log-row{grid-template-columns:59px 65px 1fr;font-size:13px;line-height:21px}
+body.presentation[data-format=square] .window>footer{font-size:10px;height:16px;bottom:6px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:first-child .room-chips span:nth-child(4){width:118px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:first-child .room-chips span:nth-child(5){width:133px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:nth-child(2) .room-chips{width:227px;gap:4px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:nth-child(2) .room-chips span:nth-child(1){width:111px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:nth-child(2) .room-chips span:nth-child(2){width:82px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:nth-child(2) .room-chips span:nth-child(4){width:126px}
+body.presentation.reference-scene[data-format=square] .room-actions>div:nth-child(2) .room-chips span:nth-child(3){width:96px}
+body.presentation.reference-scene .log-row time{color:#555c68}
+body.presentation.reference-scene .log-row .log-type{color:#388cd4}
+body.presentation.reference-scene .log-row.reference-event p{color:#dae1e9}
+body.presentation.reference-scene .log-row.reference-rule p{color:#a2a8b3}
+body.presentation.reference-scene .log-row .log-rea{color:#3c8ad6}
+body.presentation.reference-scene .log-row :is(.log-plant,.log-bug){color:#d35d5d}
+body.presentation.reference-scene .log-row .log-fix{color:#66b8db}
+body.presentation.reference-scene .log-row .log-audit{color:#6cbae1}
+body.presentation.reference-scene .log-row .log-oracle{color:#8abde5}
+body.presentation.reference-scene .log-row .log-done{color:#458ace}
+body.presentation.reference-scene .tool-feed{overflow:hidden}
+body.presentation.reference-scene .tool-item,body.presentation.reference-scene .tool-item:first-child{background:transparent}
+body.presentation.reference-scene .tool-item.fresh{background:#0b1c2d}
+body.presentation.reference-scene .tool-item.failed .tool-title b,body.presentation.reference-scene .tool-item.failed .tool-meta{color:#fa3f5b}

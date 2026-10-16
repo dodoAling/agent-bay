@@ -769,6 +769,163 @@ const OPEN_ALERT_FRAMES = [[526, 645]];
 const ROOM_PULSE = [0, .26, .47, .66, .8, .92, 1, 1, 1, .95, .85, .7, .53, .3, .05, 0];
 const ROOM_A_PULSES = 18, ROOM_B_PULSES = 22;
 const within = (intervals, index) => intervals.some(([start, end]) => index >= start && index <= end);
+
+// Flight-recorder lines read from every changed frame. REA reads one function per
+// 29.03 frames (address +0x25); measured events replace the line until the next read.
+const LOG_TAGS = 'obs obs obs inf obs unk obs inf obs obs obs inf obs unk obs inf obs obs obs inf'.split(' ');
+const LOG_EVENTS = [
+  [236, 'plant', 'const+1 planted -> oracle says ≠ -> rejected'], [352, 'plant', 'branch≠ planted -> oracle says ≠ -> rejected'],
+  [494, 'bug', 'console port: auto-collect broken. 0.0 ≠ 128.0'], [511, 'fix', 'oracle now compares the constant bytes too'],
+  [552, 'audit', '1,548 float refs re-checked -> 12 more wrong'], [567, 'oracle', 'fn 0x406f5 bytes == -> exact match'],
+  [596, 'oracle', 'fn 0x4071a bytes == -> exact match'], [613, 'plant', 'off-by-1 planted -> oracle says ≠ -> rejected'],
+  [648, 'fix', '13 fn rebuilt from spec -> exact again'], [654, 'oracle', 'fn 0x40764 bytes == -> exact match'],
+  [683, 'done', '697 fn · 696 exact · 1 open · 0 lines copied']
+];
+const LOG_RULES = [
+  [0, 'tag every claim: obs, inf or unk'], [117, 'the repo is the memory, not the chat'], [233, 'unknown is a valid answer'],
+  [349, 'study the original. ship your own.'], [465, 'no code, no addresses past the wall'], [494, 'test the oracle too'],
+  [654, 'tag every claim: obs, inf or unk'], [668, 'build the check first. then read anything.']
+];
+// Frame indexes where REA reads the next function; reads stop once the oracle takes over.
+const LOG_READS = [0, 15, 44, 73, 102, 131, 160, 189, 218, 247, 276, 305, 334, 363, 392, 421, 450, 480, 509, 538];
+function referenceLog(index) {
+  const read = LOG_READS.findLastIndex(frame => frame <= index), event = LOG_EVENTS.findLast(([frame]) => frame <= index);
+  const line = event && event[0] > LOG_READS[read] ? { frame: event[0], type: event[1], text: event[2] }
+    : { frame: LOG_READS[read], type: 'rea', text: `fn 0x${(0x404ca + read * 0x25).toString(16)} -> pseudocode -> tagged ${LOG_TAGS[read]}` };
+  // The event row keeps the day it was written; the rule row follows the current day.
+  return { ...line, day: REFERENCE_STATES[line.frame].day, rule: LOG_RULES.findLast(([frame]) => frame <= index)[1] };
+}
+// NOTES.md starts with six d01 entries (0x403ec…) and commits each REA read one
+// beat later, dated on commit; the panel lists the latest eight.
+const NOTE_TAGS = ['obs', 'inf', 'obs', 'unk', 'obs', 'inf', ...LOG_TAGS];
+const NOTE_COMMITS = [...LOG_READS.slice(1), 567];
+function referenceNotes(index) {
+  const notes = NOTE_TAGS.slice(0, 6 + NOTE_COMMITS.filter(frame => frame <= index).length).map((tag, k) => ({
+    tag, address: (0x403ec + k * 0x25).toString(16).slice(-3), day: k < 6 ? 1 : REFERENCE_STATES[NOTE_COMMITS[k - 6]].day
+  }));
+  return notes.slice(-8);
+}
+// Header chef sparks: an 84-frame loop read from the reference. Each entry lists
+// bright then dim cells as base-36 digit pairs offset from sprite unit (48, 8).
+const SPARK_FRAMES = [
+['5o5pezfzkikrksktkulnlolplqlrlsltmnmompmqmrmsmtnnnonpnqonooop', '9qjhjijrjsjtkhkqlumunrnsnt'],
+['5n5oezfzkhkikrksktkulolplqlrlsltlumompmqmrmsmtmunonpnqoo', '5p9qjhjijrjsjtjukvlnmnnnnrnsnton'],
+['5n5oezfzkhkikrksktkulolplqlrlsltlumompmqmrmsmtmunonqoo', '9qjhjrjsjtjunrnsnt'],
+['5nezfzkhkiksktkukvlolplqlrlsltlulvmompmqmrmsmtmunonqnrooopoq', '5mjhjsjtjukrnsnt'],
+['5m5nezfzkhkiksktkukvlplqlrlsltlulvmpmqmrmsmtmumvnpnqnropoqor', 'jhjsjtjukwlomononsntnuoo'],
+['5m5nezfzkhkiksktkukvlplqlrlsltlulvmpmqmrmsmtmumvnpnqnrnsopoqor', '5ljhjsjtjujvntnu'],
+['5l5mezfzkhkiktkukvkwlplqlrlsltlulvlwmpmqmrmsmtmumvmwnpnqnrnsopoq', '5njhjtjujvksntnu'],
+['5l5mezfzkhkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqoros', 'eyjhjtjujvkslpmpntnu'],
+['5l5mkhkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqos', 'jhjtjujvjwlpmpnpntnuop'],
+['5l5mkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqoros', '5kjtjujvjwkhntnunv'],
+['5l5mexkikukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5kjtjujvjwktnunv'],
+['5l5mexkikukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5kjijtjujvjwkjktnunv'],
+['5l5mkikjkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5kjijtjujvjwktnunv'],
+['5l5mkikjkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', 'jijujvjwktnunv'],
+['5l5mewfwkjkkkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', 'jujvjwktnunv'],
+['5l5mewkjkkktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5njkjtjujvjwnunv'],
+['5m5n6mewkkklktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5ljkjtjujvjwnu'],
+['5m5nevkkklktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqoros', 'jkjtjujvjwntnu'],
+['5nklktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoq', '5meujljtjujvjwkklpmpnpntnuop'],
+['5n5oeuklkmktkukvkwlplqlrlsltlulvlwmpmqmrmsmtmumvnpnqnrnsopoqor', 'jljtjujvksnt'],
+['5okmksktkukvkwlplqlrlsltlulvlwmpmqmrmsmtmumvnpnqnrnsoqor', '5njmjsjtjujvkllnnt'],
+['5o5pkmknksktkukvlplqlrlsltlulvmpmqmrmsmtmumvnpnqnroqor', 'jmjnjsjtjujvkwlnlomononsntoo'],
+['5peufukmknksktkukvlolplqlrlsltlulvmompmqmrmsmtmunonpnqnrooopoq', '5oetjmjnjsjtjujvkrlnnsnt'],
+['5p5qeufukmknkrksktkukvlnlolplqlrlsltlulvmompmqmrmsmtmunonpnqnrooopoq', 'etjmjnjrjsjtjujvkolmnsnt'],
+['5qeufukmknkrksktkulnlolplqlrlsltlumompmqmrmsmtmunonpnqooopoq', 'jmjnjrjsjtjukokvlmlvmnnnnrnson'],
+['5q5reukmknkrksktkulnlolplqlrlsltlumnmompmqmrmsmtmunnnonpnqonoo', 'jmjnjrjsjtjukokqlmnrns'],
+['5q5reufukmknkrksktkulnlolplqlrlsltlumnmompmqmrmsmtmunnnonpnqonoo', '5sjmjnjqjrjsjtkokqlmnrns'],
+['5r5seuevknkqkrksktlnlolplqlrlsltmnmompmqmrmsmtnnnonponoo', '5qjmjnjqjrjsjtkmkokulmnqnr'],
+['5r5sevkmknkqkrksktlmlnlolplqlrlsltmnmompmqmrmsmtnnnonp', 'eufujmjnjqjrjsjtkommnmnqnrom'],
+['5r5sevkmknkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnonpom', 'ewjmjnjqjrjsjtkpnqnr'],
+['5r5sevewkmknkpkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnoomonoo', 'gijmjnjpjqjrjsklllnpnq'],
+['5r5sewklkmkpkqkrksktlllmlnlolplqlrlsmmmnmompmqmrmsnmnnnoomoo', 'evgijljmjpjqjrjsjtknnpnq'],
+['5r5sewklkmkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnoomoo', 'jljmjpjqjrjsktltmtnpnq'],
+['5r5sewklkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnoomonoo', 'exfwjkjljmjpjqjrjskkkmktlkltmtnpnq'],
+['5r5sewexkkklkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnoomonoo', 'jkjljpjqjrjsktltmtnpnq'],
+['5r5sexfxkkkpkqkrkslklllmlnlolplqlrlsmmmnmompmqmrmsnmnnnoomonoo', 'eweyjjjkjljpjqjrjsklktltmtnpnq'],
+['5rexfxkjkkkpkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsnmnnnoomonoo', '5qjkjpjqjrjsllnpnq'],
+['5q5rkjkpkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnonpomonoo', 'exfxjijpjqjrjskikknqnr'],
+['5qeykikjkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnonponoo', 'jijqjrjskpnqnrom'],
+['5qezkikqkrksktlnlolplqlrlsltmmmnmompmqmrmsmtnnnonponoo', 'jijqjrjsjtkplmnmnqnrom'],
+['5p5qezkikqkrksktlnlolplqlrlsltmnmompmqmrmsmtnnnonponooop', 'jijqjrjsjtkulmlummnmnqnrom'],
+['5pezfzkikqkrksktkulnlolplqlrlsltmnmompmqmrmsmtnnnonponoo', '5o5qjqjrjsjtkhnqnrns'],
+['5o5pezfzkikrksktkulnlolplqlrlsltlumnmompmqmrmsmtmunnnonpnqonoo', 'jhjrjsjtjukhkqnrns'],
+['5oezfzkhkikrksktkulolplqlrlsltlumompmqmrmsmtmunonpnqoo', 'jhjijrjsjtjulnlvmnmvnnnrnson'],
+['5n5oezfzkhkikrksktkulolplqlrlsltlumompmqmrmsmtmunonpnqnroooq', 'jhjrjsjtjuns'],
+['5nezfzkhksktkukvlolplqlrlsltlulvmompmqmrmsmtmumvnonqnroo', '5mjhjsjtjukrnsnt'],
+['5m5nezfzkhksktkukvlplqlrlsltlulvmpmqmrmsmtmumvnqnr', 'jhjsjtjujvlolwmomwnonsntoo'],
+['5m5nezfzkhksktkukvlplqlrlsltlulvlwmpmqmrmsmtmumvnpnqnropoq', '5ljhjsjtjujvnsnt'],
+['5l5mezfzkhktkukvkwlplqlrlsltlulvmpmqmrmsmtmumvnpnqnrnsopoq', '5njhjsjtjujvksnt'],
+['5l5mezfzkhkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoq', 'eyjhjtjujvjwkslpmpnpntop'],
+['5l5meyezkhkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqos', 'jhjtjujvjwlpmpnpnt'],
+['5l5meykiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnsoqos', '5kexjtjujvjwkhnu'],
+['5l5mexkiktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqos', '5kjtjujvjwntnunv'],
+['5l5mexkikukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5kjijtjujvjwktnunv'],
+['5l5mkikukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5kjijujvjwktnunv'],
+['5l5mkikjkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', 'gojijtjujvjwkkktnunv'],
+['5l5mkjkkkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', 'ewjjjtjujvjwktnunv'],
+['5l5mewkjkkktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsntoqoros', '5njkjtjujvjwnunv'],
+['5mevewkkktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqoros', '5ljkjtjujvjwntnunv'],
+['5m5nevkkktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqoros', 'jkjtjujvjwlpnpntnu'],
+['5n5oevklktkukvkwlqlrlsltlulvlwmqmrmsmtmumvmwnqnrnsoqos', '5meufujtjujvjwkklpmpnpntnuop'],
+['5n5oeuevklktkukvkwlplqlrlsltlulvlwmpmqmrmsmtmumvmwnpnqnrnsopoq', 'jljtjujvjwksntnu'],
+['5oeukmksktkukvkwlplqlrlsltlulvmpmqmrmsmtmumvmwnpnqnropoqor', '5n5pimjmjnjsjtjujvkllnnsnt'],
+['5o5peukmknksktkukvlplqlrlsltlulvmpmqmrmsmtmumvnpnqnropoq', 'jmjnjsjtjujvlnlomomwnonsntoo'],
+['5p5qeukmknksktkukvlnlolplqlrlsltlulvmompmqmrmsmtmumvnonpnqnrooopoq', '5ojmjnjsjtjukrnsntor'],
+['5p5qeukmknkrksktkukvlnlolplqlrlsltlumompmqmrmsmtmunonpnqooopoq', 'jmjnjrjsjtjukonrnsnt'],
+['5qeukmknkrksktkulnlolplqlrlsltlumompmqmrmsmtmunonpnqoooq', '5petjmjrjsjtjukolmlvmnmvnnnrnson'],
+['5q5reukmknkrksktkulnlolplqlrlsltlumnmompmqmrmsmtmunnnonpnqonoo', 'jmjnjrjsjtjukokqlmnrns'],
+['5q5reuknkrksktlnlolplqlrlsltlumnmompmqmrmsmtmunnnonponooop', 'jmjnjojrjsjtkmkokqlmnqnrns'],
+['5r5seufuknkqkrksktlnlolplqlrlsltmnmompmqmrmsmtnnnonponooop', '5qjmjnjojqjrjsjtkmkokulmlumunqnrns'],
+['5r5skmknkqkrksktlmlnlolplqlrlsltmnmompmqmrmsmtnnnonponoo', 'eujmjnjqjrjsjtkommnmnqnrnsom'],
+['5r5sevkmknkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnonpomonoo', 'jmjnjqjrjsjtkpnqnrnsop'],
+['5r5sevewkmknkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsnmnnnoomoo', 'jmjnjpjqjrjsjtklkpllnpnqnr'],
+['5r5sewfwklkmkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnooo', '5tevjljmjpjqjrjsknnpnqnr'],
+['5r5sewfwklkmkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnooo', '5tjljmjpjqjrjsktltmtnpnqnr'],
+['5r5sewklkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnooo', '5tfwjkjljpjqjrjskkkmktlkltmtnpnq'],
+['5r5sewexkkklkpkqkrkslllmlnlolplqlrlsmmmnmompmqmrmsnmnnnooo', 'jkjljpjqjrjsktlkltmtnpnq'],
+['5r5sexkkkpkqkrkslklllmlnlolplqlrlsmmmnmompmqmrmsnmnnnooo', 'ewikjjjkjljpjqjrjsjtklktltmtnpnqnr'],
+['5r5sexkjkkkpkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsnmnnnoomoo', '5qjjjkjpjqjrjsjtllnpnqnr'],
+['5q5rkjkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnoomoo', 'exjijjjpjqjrjsjtkikkkplknpnqnr'],
+['5q5reykikjkqkrksktlmlnlolplqlrlsltmmmnmompmqmrmsmtnmnnnonpomonoo', 'jijjjqjrjsjtkpnqnrns'],
+['5qezkikqkrksktlmlnlolplqlrlsltmnmompmqmrmsmtnnnonpoo', 'jijqjrjsjtkpmmnmnqnrnsom'],
+['5qezkikqkrksktlnlolplqlrlsltmnmompmqmrmsmtnnnonponooop', 'jqjrjsjtkulmmmnmnqnrnsom'],
+['5pezkikqkrksktlnlolplqlrlsltmnmompmqmrmsmtnnnonponoo', '5ogmjqjrjsjtkhnqnrns']
+];
+export function referenceSparks(index) {
+  return SPARK_FRAMES[index % SPARK_FRAMES.length].map((cells, dim) => (cells.match(/../g) || []).map(pair => ({
+    x: 48 + parseInt(pair[0], 36), y: 8 + parseInt(pair[1], 36), dim: !!dim
+  }))).flat();
+}
+// Rail tool feed read from settled frames: [first frame, tool, argument, result, tag].
+// Calls land every half beat; seven earlier calls are already listed at frame 0.
+const FEED_CALLS = [
+  [-1, 'strings', 'fn_4045b', '3 refs'], [-1, 'decompile', 'fn_40480', '57 lines', 'obs'], [-1, 'xrefs', 'fn_40480', '4 callers'],
+  [-1, 'decompile', 'fn_404a5', '20 lines', 'inf'], [-1, 'constants', 'fn_404a5', '0x64, 0xa0'], [-1, 'decompile', 'fn_404ca', '30 lines', 'obs'],
+  [-1, 'callgraph', 'fn_404ca', '7 edges'], [2, 'decompile', 'fn_404ef', '53 lines', 'obs'], [15, 'strings', 'fn_404ef', '3 refs'],
+  [30, 'decompile', 'fn_40514', '23 lines', 'obs'], [44, 'xrefs', 'fn_40514', '2 callers'], [59, 'decompile', 'fn_40539', '40 lines', 'inf'],
+  [73, 'constants', 'fn_40539', '0x80, 0xc4'], [88, 'decompile', 'fn_4055e', '29 lines', 'obs'], [102, 'callgraph', 'fn_4055e', '9 edges'],
+  [117, 'decompile', 'fn_40583', '40 lines', 'unk'], [131, 'strings', 'fn_40583', '3 refs'], [146, 'decompile', 'fn_405a8', '36 lines', 'obs'],
+  [160, 'xrefs', 'fn_405a8', '5 callers'], [175, 'decompile', 'fn_405cd', '47 lines', 'inf'], [189, 'constants', 'fn_405cd', '0x07, 0x5c'],
+  [204, 'decompile', 'fn_405f2', '43 lines', 'obs'], [218, 'callgraph', 'fn_405f2', '11 edges'], [233, 'decompile', 'fn_40617', '36 lines', 'obs'],
+  [247, 'strings', 'fn_40617', '3 refs'], [262, 'decompile', 'fn_4063c', '26 lines', 'obs'], [276, 'xrefs', 'fn_4063c', '3 callers'],
+  [291, 'decompile', 'fn_40661', '42 lines', 'inf'], [305, 'constants', 'fn_40661', '0x64, 0xa0'], [320, 'decompile', 'fn_40686', '20 lines', 'obs'],
+  [334, 'callgraph', 'fn_40686', '4 edges'], [349, 'decompile', 'fn_406ab', '36 lines', 'unk'], [363, 'strings', 'fn_406ab', '3 refs'],
+  [378, 'decompile', 'fn_406d0', '18 lines', 'obs'], [392, 'xrefs', 'fn_406d0', '6 callers'], [407, 'decompile', 'fn_406f5', '30 lines', 'inf'],
+  [421, 'constants', 'fn_406f5', '0x80, 0xc4'], [436, 'decompile', 'fn_4071a', '56 lines', 'obs'], [450, 'callgraph', 'fn_4071a', '6 edges'],
+  [465, 'decompile', 'fn_4073f', '25 lines', 'obs'], [480, 'strings', 'fn_4073f', '3 refs'], [494, 'decompile', 'fn_40764', '20 lines', 'obs'],
+  [509, 'xrefs', 'fn_40764', '4 callers'], [516, 'constants', 'float refs', '1,548 found'], [523, 'decompile', 'fn_40789', '35 lines', 'inf'],
+  [538, 'constants', 'fn_40789', '0x07, 0x5c'], [546, 'compare', 'const bytes', '12 mismatch', 'bad']
+];
+// Share of the 44 px row slide completed on each frame after a call lands.
+const FEED_SLIDE = [.02, .2, .48, .77, .95, 1];
+export function referenceFeed(seconds) {
+  const frame = seconds * 30, landed = FEED_CALLS.filter(([start]) => start <= frame);
+  const newest = landed.at(-1), age = frame - newest[0], step = Math.floor(age);
+  const slide = newest[0] < 0 || step >= FEED_SLIDE.length - 1 ? 1 : FEED_SLIDE[step] + (FEED_SLIDE[step + 1] - FEED_SLIDE[step]) * (age - step);
+  return { slide, fresh: newest[0] >= 0, calls: landed.slice(-9).reverse().map(([, tool, arg, result, tag]) => ({ tool, arg, result, tag })) };
+}
 function roomPulse(seconds, pulses) {
   const cycle = Math.floor(seconds / .968);
   if (cycle >= pulses) return 0;
@@ -788,7 +945,7 @@ export function referenceState(elapsedMs, durationMs = REFERENCE_DURATION_MS) {
   if (state.callout === 'test' && seconds > 19.5666666667) calloutOpacity = Math.max(0, 1 - (seconds - 19.5666666667) / .2);
   return { ...state, ...REFERENCE_DETAILS[index], seconds, calloutOpacity, constants: seconds >= 17.0333333333,
     plantedChip: within(PLANTED_CHIP_FRAMES, index), openAlert: within(OPEN_ALERT_FRAMES, index),
-    roomPulseA: roomPulse(seconds, ROOM_A_PULSES), roomPulseB: roomPulse(seconds, ROOM_B_PULSES) };
+    roomPulseA: roomPulse(seconds, ROOM_A_PULSES), roomPulseB: roomPulse(seconds, ROOM_B_PULSES), log: referenceLog(index), notes: referenceNotes(index) };
 }
 
 // BEGIN MEASURED FACTORY DETAILS

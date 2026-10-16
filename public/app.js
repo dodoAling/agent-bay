@@ -286,7 +286,7 @@ export function renderToolResult(call = {}, options = {}) {
 
 import { DemoPlayer, SCENARIOS } from './demo-player.js';
 import { FactoryView } from './factory-view.js';
-import { referenceState } from './demo-scenarios.js';
+import { referenceState, referenceSparks, referenceFeed } from './demo-scenarios.js';
 const $ = selector => document.querySelector(selector);
 const factory = new FactoryView($('#factory-canvas'));
 const liveState = { runs: [], events: [], sequence: 0, eventLimit: 5000, connections: [], model: null, selected: null, selectedCall: null, filter: '', setup: null, follow: true };
@@ -341,7 +341,7 @@ bridge.onerror = () => { if (!player.active) { $('#stream-dot').className = 'dot
 function renderConnections() {
   if (player.active) {
     $('#connection-chips').innerHTML = demoFrame.scene === 'cleanroom' ? '<span class="reference-engine active">ghidra</span><span class="reference-engine">hopper</span><span class="reference-engine">ida</span>' : `<span class="simulated">MODEL · DEMO</span><span class="simulated">${esc(SCENARIOS[demoFrame.scene].name)} · DEMO</span>`;
-    $('#mcp-count').textContent = 'SIMULATED TOOLS';
+    $('#mcp-count').textContent = 'simulated tools · local';
     return;
   }
   const connected = state.connections.filter(s => s.status === 'connected');
@@ -370,6 +370,23 @@ function callsFor(events) {
   }
   return [...calls.values()];
 }
+// Preview playback animates the header chef's sparks with the measured loop; live views keep the static sprite.
+let chefSparkFrame;
+function renderChefSparks(frame) {
+  const group = $('.brand-icon g[data-part="spark"]');
+  if (!group || frame === chefSparkFrame) return;
+  group.dataset.static ??= group.innerHTML;
+  chefSparkFrame = frame;
+  group.innerHTML = frame === null ? group.dataset.static : referenceSparks(frame).map(({ x, y, dim }) => `<rect x="${x}" y="${y}" width="1" height="1" fill="${dim ? '#aaa35c' : '#e6d477'}"/>`).join('');
+}
+// The clean-room preview replays the measured rail feed: each call slides the list down one row.
+function renderReferenceFeed(seconds) {
+  const feed = referenceFeed(seconds);
+  $('#tool-feed').innerHTML = `<div class="reference-feed" style="transform:translateY(${((feed.slide - 1) * 44).toFixed(2)}px)">${feed.calls.map((c, i) => {
+    const meta = c.tag && c.tag !== 'bad' ? `<i class="evidence-dot ${c.tag}"></i><span>${esc(c.result)} · ${c.tag}</span>` : `<span>${esc(c.result)}</span>`;
+    return `<div class="tool-item${i === 0 && feed.fresh ? ' fresh' : ''}${c.tag === 'bad' ? ' failed' : ''}"><div class="tool-title"><span class="tool-prefix">rea.</span><b>${esc(c.tool)}</b><span class="tool-inline-args">${esc(c.arg)}</span></div><div class="tool-meta">${meta}</div></div>`;
+  }).join('')}</div>`;
+}
 function render() {
   const run = state.runs.find(r => r.id === state.selected);
   const events = state.events.filter(e => e.runId === state.selected);
@@ -377,9 +394,11 @@ function render() {
   const reference = player.active && demoFrame.scene === 'cleanroom' ? referenceState(demoFrame.elapsed, demoFrame.duration) : null;
   document.body.classList.toggle('reference-scene', !!reference);
   document.body.classList.toggle('reference-playable', !!reference?.runtime);
+  renderChefSparks(player.active ? Math.floor(demoFrame.elapsed * 30 / 1000 + 1e-7) : null);
   $('#brand-name').textContent = reference ? 'Agent Bay Studio' : 'Agent Bay';
   $('.titlebar > span').textContent = reference ? 'Agent Bay × REA — clean room · oracle on' : 'agent-bay // local control plane';
   $('.flow-panel .panel-heading .section-label').textContent = reference ? 'ONE BINARY · TWO ROOMS' : 'ONE WORKFLOW · TWO ROOMS';
+  $('.rail-session-header > span').textContent = reference ? 'REA · MCP SESSION' : 'MCP · SESSION';
   // A live run's counters cover its lifetime; calls/events below are only the
   // bounded detail window. Preview frames always derive their own time slice.
   const lifetimeSummary = !player.active ? run?.summary : null;
@@ -459,12 +478,13 @@ function render() {
   $('#tools-btn').disabled = player.active;
   $('#run-select').disabled = player.active;
   $('#checks-list').innerHTML = checks.length ? checks.map(e => `<div class="check-row ${esc(e.status)}"><span>${esc(e.name || 'Check')}</span><span>${{ passed: 'PASS', failed: 'FAIL', unknown: 'UNKNOWN' }[e.status]}</span></div>`).join('') : `<div class="unreported">${checksCount ? 'Earlier check details are outside the retention window' : 'No checks reported'}<span>—</span></div>`;
-  const feedCalls = reference ? [...calls].sort((a, b) => (b.end?.at || b.at) - (a.end?.at || a.at)) : [...calls].reverse();
+  const feedCalls = [...calls].reverse();
   $('#tool-feed').title = windowNote || 'Latest 8 retained tool calls';
-  $('#tool-feed').innerHTML = (trimmed ? '<p class="field-note">Counts cover the session lifetime. Only retained call details appear below.</p>' : '') + (calls.length ? feedCalls.slice(0, 8).map(c => {
+  if (reference) renderReferenceFeed(reference.seconds);
+  else $('#tool-feed').innerHTML = (trimmed ? '<p class="field-note">Counts cover the session lifetime. Only retained call details appear below.</p>' : '') + (calls.length ? feedCalls.slice(0, 8).map(c => {
     const kind = c.end?.result?.classification || (c.end?.ok === false ? 'unk' : 'obs');
     const arg = c.args?.procedure || c.args?.path || c.args?.topic || '';
-    const meta = c.pending ? player.active ? 'running' : `Running · ${Math.max(0, Math.floor((Date.now() - c.at) / 1000))}s` : reference && c.name === 'xrefs' ? '4 callers' : reference && c.name === 'strings' ? '3 refs' : reference && c.name === 'callgraph' ? '6 edges' : reference && c.name === 'constants' ? '1,548 found' : player.active && c.end?.result?.lines ? `${c.end.result.lines} lines · ${kind}` : `${c.end?.durationMs ?? '—'} ms · ${c.end?.ok ? 'success' : 'failed'}`;
+    const meta = c.pending ? player.active ? 'running' : `Running · ${Math.max(0, Math.floor((Date.now() - c.at) / 1000))}s` : player.active && c.end?.result?.lines ? `${c.end.result.lines} lines · ${kind}` : `${c.end?.durationMs ?? '—'} ms · ${c.end?.ok ? 'success' : 'failed'}`;
     return `<button class="tool-item ${state.selectedCall === c.callId ? 'selected' : ''} ${c.end?.ok === false ? 'failed' : ''}" data-call="${esc(c.callId || '')}" title="${esc(`${c.source || 'tool'} / ${c.name}${arg ? '\n' + arg : ''}`)}"><div class="tool-title"><span class="tool-prefix">${esc((c.source || 'tool').split(' / ')[0].toLowerCase().slice(0, 10))}.</span><b>${esc(c.name)}</b><span class="tool-inline-args">${esc(short(arg, 28))}</span></div><div class="tool-meta"><i class="evidence-dot ${esc(kind)}"></i><span>${esc(meta)}</span></div></button>`;
   }).join('') : `<div class="empty-state"><span class="empty-icon">⌘</span><p>${callCount ? `${callCount} tool ${callCount === 1 ? 'call' : 'calls'} recorded` : 'Waiting for the first tool call'}</p><small>${callCount ? 'Earlier tool details are outside the retention window' : 'Calls appear here as live events arrive'}</small></div>`);
   const lastCalls = calls.slice(-128);
@@ -483,7 +503,7 @@ function render() {
   $('#signal-checks-bar').style.width = `${checksCount ? checksPassed / checksCount * 100 : 0}%`;
   $('#signal-runtime').textContent = run?.status === 'completed' ? 'complete' : run?.status === 'failed' ? 'failed' : run?.status === 'running' ? 'running' : 'waiting';
   $('#signal-runtime-bar').style.width = `${run?.status === 'completed' ? 100 : run?.status === 'running' ? Math.max(2, progress * 100) : 0}%`;
-  $('#rail-signals-label').textContent = reference ? '3 ORACLES · SIMULATED' : '3 SIGNALS';
+  $('#rail-signals-label').textContent = reference ? '3 ORACLES' : '3 SIGNALS';
   $('#signal-tools-label').textContent = reference ? 'byte' : 'tools';
   $('#signal-tools-note').textContent = reference ? reference.constants ? 'instructions + constant bytes' : 'compiled bytes vs original' : 'successful tool calls';
   $('#signal-checks-label').textContent = reference ? 'planted' : 'checks';
@@ -582,10 +602,8 @@ function renderTimeline(events, calls = []) {
   const panel = $('#timeline');
   if (player.active && document.body.classList.contains('presentation')) delete panel.dataset.renderKey;
   if (player.active && demoFrame.scene === 'cleanroom' && document.body.classList.contains('presentation')) {
-    const r = referenceState(demoFrame.elapsed, demoFrame.duration), last = calls.at(-1);
-    const rule = r.callout === 'bug' ? 'a byte match does not prove the oracle' : r.testing ? 'test the oracle too' : r.day > 6 ? 'the spec is the wall; the oracle decides' : 'the record is the memory, not the chat';
-    const message = r.runtime ? '697 read · 696 exact · 1 open · runtime playable · DEMO' : last ? `fn ${last.args.procedure} → pseudocode → tagged ${last.end?.result?.classification || 'obs'}` : 'load game.exe → read entry point';
-    panel.innerHTML = `<div class="log-row"><time>d${pad(r.day)}</time><span class="log-type">rea</span><p>${esc(message)}</p></div><div class="log-row"><time>d${pad(r.day)}</time><span class="log-type">rule</span><p>${esc(rule)}</p></div>`;
+    const r = referenceState(demoFrame.elapsed, demoFrame.duration), { log } = r;
+    panel.innerHTML = `<div class="log-row reference-event"><time>d${pad(log.day)}</time><span class="log-type log-${log.type}">${log.type}</span><p>${esc(log.text)}</p></div><div class="log-row reference-rule"><time>d${pad(r.day)}</time><span class="log-type">rule</span><p>${esc(log.rule)}</p></div>`;
     return;
   }
   if (player.active && document.body.classList.contains('presentation')) {
