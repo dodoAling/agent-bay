@@ -280,3 +280,9 @@ Actual host testing has been performed on Windows. macOS/Linux startup code and 
 The updated local service is http://127.0.0.1:4319; the earlier 4318 service remains available. Real-tool evidence: `artifacts/reliability-real-rea-ui.json`. Manual external Codex instrumentation: `artifacts/codex-external-live-ui.json`. Credentials remain in the selected server's memory.
 
 API documentation: [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk), [Anthropic Messages](https://platform.claude.com/docs/en/api/messages/create), [Ollama compatibility](https://docs.ollama.com/api/openai-compatibility).
+
+## Contact
+
+- Email: [dodoaling@163.com](mailto:dodoaling@163.com)
+- X (Twitter): [@DodoAling](https://x.com/DodoAling)
+- wechat: `dodoaling`
