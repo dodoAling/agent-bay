@@ -1,0 +1,133 @@
+// Native Canvas reconstruction. Coordinates are measured in the 684 × 395
+// factory viewport of the 1080 × 1080 reference, not an embedded video.
+const P = { bg: '#09121c', dim: '#68758b', blue: '#299fff', cyan: '#45c8ef', red: '#fa3f5b', text: '#ced7e4', line: '#263248' };
+const clamp01 = n => Math.max(0, Math.min(1, n));
+const smooth = n => { const u = clamp01(n); return u * u * (3 - 2 * u); };
+const faults = [7.7667, 11.6333, 20.3667];
+
+export function drawReferenceFactory(view, forcedMs) {
+  const { ctx, canvas, data: d } = view, r = d.reference;
+  const t = forcedMs === undefined ? r.seconds : forcedMs / (d.duration || 24800) * 24.8;
+  const scale = Math.min(view.width / 684, view.height / 395), pixel = view.dpr || 1;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = P.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(pixel * scale, 0, 0, pixel * scale, (view.width - 684 * scale) * pixel / 2, pixel * scale);
+  const text = (value, x, y, color = P.dim, size = 10, bold = false, align = 'left') => {
+    ctx.font = `${bold ? '600 ' : ''}${size}px "Cascadia Mono", Consolas, monospace`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(String(value), x, y); ctx.textAlign = 'left';
+  };
+  const line = (x, y, xx, yy, color = P.line, width = 1) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(xx, yy); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); };
+  const box = (x, y, w, h, fill, stroke, radius = 4, width = 1) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.lineWidth = width; ctx.strokeStyle = stroke; ctx.stroke(); } };
+  const card = (x, y, type = 'spec', angle = 0, alpha = 1) => {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(angle);
+    if (type === 'hex') { box(-17, -9, 34, 18, '#1b2331', '#293143', 3); text(['0x5c', '0xd1', '0x80', '0xc4'][Math.floor(t / .968) % 4], 0, 3, '#a2adbf', 8.5, false, 'center'); ctx.restore(); return; }
+    const color = type === 'read' ? P.blue : type === 'fn' ? P.cyan : type === 'bad' ? P.red : '#d0d9e8';
+    box(-16, -9, 32, 18, '#0c1723', color, 3, 1.7);
+    if (type === 'fn') text('fn', 0, 3, color, 9, true, 'center');
+    else { line(-10, -3, 9, -3, color, 1.3); line(-10, 3, 4, 3, color, 1.3); if (type === 'read') { ctx.beginPath(); ctx.arc(10, 3, 2, 0, Math.PI * 2); ctx.fillStyle = P.cyan; ctx.fill(); } }
+    ctx.restore();
+  };
+  const rejectionIndex = faults.findIndex(s => t >= s && t < s + .46);
+  const rejecting = rejectionIndex !== -1;
+  const rejected = r.rejected;
+  const beat = t % .968, move = smooth((beat - .480) / .488), shift = move * 87;
+  const active = t < 24.2;
+
+  text('01 READ', 118, 23, P.text, 12, true, 'center'); text('02 SPEC.md', 296, 23, P.text, 12, true, 'center');
+  text('03 BUILD', 467, 23, P.text, 12, true, 'center'); text('04 ORACLE', 556, 23, P.text, 12, true, 'center');
+  // Input artifact and scanner. Text is intentionally clipped by the reader.
+  ctx.beginPath(); ctx.moveTo(16, 68); ctx.lineTo(35, 68); ctx.lineTo(43, 76); ctx.lineTo(43, 103); ctx.lineTo(16, 103); ctx.closePath(); ctx.fillStyle = '#102033'; ctx.fill(); ctx.strokeStyle = '#318bca'; ctx.lineWidth = 1; ctx.stroke();
+  text('01', 29, 85, '#8dd0ff', 8, false, 'center'); text('10', 29, 96, '#8dd0ff', 8, false, 'center'); text('binary', 29, 118, P.dim, 9, false, 'center');
+  const readerLight = clamp01((r.readerBlue - 130) / 72), builderLight = clamp01((r.builderBlue - 53) / 92);
+  ctx.save(); ctx.shadowBlur = readerLight * 8; ctx.shadowColor = '#299fff88';
+  box(63, 45, 117, 100, '#0b1523', `rgb(${Math.round(50 - 9 * readerLight)},${Math.round(105 + 54 * readerLight)},${Math.round(170 + 85 * readerLight)})`, 5, 2); ctx.restore(); text('REA', 71, 63, P.blue, 15, true);
+  ctx.beginPath(); ctx.arc(168, 57, 3, 0, Math.PI * 2); ctx.fillStyle = beat < .48 && active ? '#2d547c' : '#1a2d47'; ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.rect(69, 72, 105, 65); ctx.clip();
+  const lines = d.readerLines || ['CMP EAX, 0x5c', 'JZ  0x180124aba', 'CMP EAX, 0x5b', 'MOV EDX, 0x64', 'CALL sound_init', 'FLD [0x4b2c10]', 'RET'];
+  const scroll = active ? (t * 13) % 11 : 0;
+  for (let i = -1; i < 8; i++) text(lines[((Math.floor(t * 1.3) + i) % lines.length + lines.length) % lines.length].slice(0, 23), 72, 83 + i * 11 - scroll, '#65758e', 8.5);
+  ctx.restore();
+  if (active) { const yy = 71.0746 + 70.2792 * (t % .9677); ctx.save(); ctx.shadowColor = '#69b8ff'; ctx.shadowBlur = 5; line(66, yy, 176, yy, '#6cbdff', 1.8); ctx.restore(); }
+
+  // The fixed spec boundary is continuous through the conveyor.
+  const glow = ctx.createLinearGradient(290, 0, 303, 0); glow.addColorStop(0, '#47c9f000'); glow.addColorStop(.48, '#47c9f038'); glow.addColorStop(.62, '#4cccf0a0'); glow.addColorStop(1, '#47c9f000');
+  ctx.fillStyle = glow; ctx.fillRect(290, 35, 13, 348); line(296, 35, 296, 383, '#43b8e0', 3);
+  ctx.save(); ctx.translate(313, 90); ctx.rotate(Math.PI / 2); text('spec only', 0, 0, '#5d7794', 9); ctx.restore();
+  ctx.save(); ctx.translate(284, 328); ctx.rotate(-Math.PI / 2); text('no code · no addresses', 0, 0, '#5b7591', 9); ctx.restore();
+
+  ctx.save(); ctx.translate(467, 54); ctx.rotate(t * .85);
+  for (let i = 0; i < 8; i++) { ctx.rotate(Math.PI / 4); ctx.fillStyle = '#2c8aca'; ctx.fillRect(-2.5, -13, 5, 7); }
+  ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fillStyle = '#2c8aca'; ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, Math.PI * 2); ctx.fillStyle = P.bg; ctx.fill(); ctx.restore();
+  const building = builderLight > .55;
+  box(435, 79, 64, 62, '#101825', `rgb(${Math.round(42 - builderLight)},${Math.round(50 + 109 * builderLight)},${Math.round(73 + 182 * builderLight)})`, 5, 2); text(building ? 'build' : 'idle', 467, 114, building ? '#8eb9df' : '#66718a', 11, false, 'center');
+  const color = rejecting ? P.red : P.cyan;
+  ctx.save(); ctx.translate(556, 43); ctx.rotate(rejecting ? -.08 : .025 * Math.sin(t * 2));
+  line(-20, 0, 20, 0, color, 2); line(0, -4, 0, 22, color, 2); line(-9, 22, 9, 22, color, 2);
+  for (const side of [-16, 16]) { line(side, 0, side, 10, color); ctx.beginPath(); ctx.moveTo(side, 0); ctx.lineTo(side - 7, 10); ctx.lineTo(side + 7, 10); ctx.closePath(); ctx.fillStyle = color; ctx.fill(); }
+  ctx.restore();
+  box(523, 77, 68, 67, '#0d1b29', rejecting ? P.red : '#3d809f', 6, 2);
+  text(rejecting ? 'bytes ≠' : beat < .48 ? 'bytes ?' : 'bytes ==', 557, 102, rejecting ? P.red : '#65778e', 11, false, 'center');
+  text(r.constants ? '+ const' : 'oracle', 557, 122, color, 10, true, 'center');
+  if (rejecting) { const p = clamp01((t - faults[rejectionIndex]) / .46); ctx.save(); ctx.globalAlpha = 1 - p * .55; ctx.beginPath(); ctx.arc(557, 111, 38 + p * 13, 0, Math.PI * 2); ctx.strokeStyle = P.red; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore(); }
+  box(612, 49, 66, 72, '#11131e', '#422a36', 7); text('rejected', 645, 63, '#8b8190', 9, false, 'center');
+  for (let i = 0; i < Math.min(3, rejected); i++) box(622, 100 - i * 12, 46, 8, '#30121a', '#e53a54', 2);
+  text(`${rejected} / 3`, 645, 130, P.red, 12, true, 'center');
+  ctx.beginPath(); ctx.moveTo(384, 64); ctx.lineTo(371, 87); ctx.lineTo(397, 87); ctx.closePath(); ctx.fillStyle = '#c63a50'; ctx.fill(); text('!', 384, 82, '#11131c', 12, true, 'center'); text('plant', 384, 107, '#cc405a', 10, false, 'center');
+
+  box(18, 153, 654, 17, '#101b27', '#2a3345', 8);
+  ctx.save(); ctx.beginPath(); ctx.rect(21, 155, 647, 13); ctx.clip();
+  for (let x = -10; x < 690; x += 24) line(x + (t * 24) % 24, 166, x + 8 + (t * 24) % 24, 155, '#2c394e'); ctx.restore();
+  for (let x = 32; x < 678; x += 46) { ctx.beginPath(); ctx.arc(x, 177, 5, 0, Math.PI * 2); ctx.fillStyle = '#1e293c'; ctx.fill(); ctx.strokeStyle = '#333d53'; ctx.lineWidth = .8; ctx.stroke(); }
+  // Cards wait on each station for half a beat, then ease to the next station.
+  // Track 541px in the original is our centre 209px (left edge 193px).
+  const centers = [36, 123, 210, 297, 384, 467, 558, 642];
+  for (let station = 0; station < 8; station++) {
+    if (t >= 17.424 + station * .968) continue;
+    const x = centers[station] + shift;
+    if (x < 25 || x > 656) continue;
+    const bad = station >= 4 && station <= 6 && faults.some(s => { const age = t - (s - (6 - station) * .968); return age >= 0 && age < (station === 6 ? .46 : .968); });
+    const type = station < 2 ? 'hex' : x < 310 ? 'read' : x < 520 ? 'spec' : 'fn';
+    card(x, 144, bad ? 'bad' : type);
+    if (bad && station === 4) { for (let y = 112; y < 135; y += 5) line(384, y, 384, y + 2, P.red); }
+    if (bad && station === 5) text('const+1', x, 129, P.red, 8, false, 'center');
+  }
+  // Assembly fragments peel off into the reader's retained code pile.
+  if (t < 18.3 && beat >= .35 && beat <= .95) { const q = clamp01((beat - .35) / .60), stackTop = r.stackTop - 267; ctx.save(); ctx.translate(122, 167 + (stackTop - 167) * smooth(q)); ctx.rotate(.56 * (1 - q)); box(-16, -4, 32, 8, '#263249', null, 1); text('code', -12, 2, '#9da8ba', 7.5); ctx.restore(); }
+  // Successful fn tiles drop toward the comparison matrix; rejected ones arc up.
+  if (active && t > 1) { const u = ((t + .1) % .968) / .968; if (u < .65) card(642, 183 + 43 * (u / .65) ** 2, 'fn', 0, .8); }
+  faults.forEach(s => { const u = (t - s - .45) / .47; if (u >= 0 && u <= 1) card(557 + 85 * u, 144 - 71 * Math.sin(u * Math.PI / 2), 'bad', u * .25); });
+  text('ROOM A · READER', 12, 195, '#5c6b84', 10); text('ROOM B · BUILDER', 318, 195, '#5c6b84', 10);
+  line(72, 204, 72, 334); line(72, 334, 172, 334); line(172, 204, 172, 334);
+  for (let y = r.stackTop - 267, i = 0; y <= 328; y += 5.2, i++) box(77 + i % 2 * 2, y, 91, 4.2, i % 3 ? '#27344d' : '#2d3c58', null, 1);
+  box(181, 204, 94, 142, '#0e1927', '#273347', 5); text('NOTES.md', 189, 221, '#bdc8da', 10, true);
+  const entries = Math.floor(t / .968), notesCount = Math.min(9, 7 + entries);
+  for (let i = 0; i < notesCount; i++) { const index = Math.max(0, entries - 2) + i, day = Math.max(1, Math.floor(Math.max(0, index - 6) * .968 / 2.03) + 1), y = 238 + i * 11; ctx.beginPath(); ctx.arc(190, y - 3, 2.5, 0, Math.PI * 2); ctx.fillStyle = index % 3 === 1 ? '#8a91ef' : P.cyan; ctx.fill(); text(`d${String(day).padStart(2, '0')} ${index % 3 === 1 ? 'inf' : 'obs'} ${(0x3ec + index * 0x25).toString(16)}`, 197, y, '#7c8aa0', 8.8); }
+  text('code stays here', 68, 351, '#8b98aa', 11); text(`${r.sourceLines} asm lines kept`, 59, 369, P.blue, 11); text('obs', 193, 369, P.cyan, 9); text('inf', 219, 369, '#8b92ee', 9); text('unk', 249, 369, '#6f7d90', 9);
+
+  const cols = 41, rows = 17, size = 6.5, gap = 2.05, mx = 320, my = 219;
+  text('one cell = one function', mx, 212, '#5b6b81', 9);
+  for (let i = 0; i < cols * rows; i++) {
+    let fill = i < r.matched ? i >= r.matched - 9 ? '#a4d4fa' : '#299ef1' : '#152131';
+    if (r.gridFlags.includes(i)) fill = P.red;
+    ctx.fillStyle = fill; ctx.fillRect(mx + i % cols * (size + gap), my + Math.floor(i / cols) * (size + gap), size, size);
+  }
+  if (t >= 17.4667 && t < 19.3) { const scanX = mx + (t - 17.4667) * 190.9; line(scanX, my, scanX, my + 146, '#9addff', 1.5); }
+  if (r.callout) {
+    ctx.save(); ctx.globalAlpha = r.calloutOpacity;
+    const bug = r.callout === 'bug', color = bug ? P.red : P.cyan;
+    box(320, 222, 351, 37, '#0b1422f5', color, 5, 1.5);
+    text(bug ? 'BUG · passed the byte check' : 'TEST THE ORACLE TOO', 332, 237, color, 10, true);
+    text(bug ? 'power check 0.0, original 128.0' : t >= 18.4 ? '1,548 refs · 12 more wrong' : 'now comparing constant bytes', 332, 252, '#d5dbe7', 10);
+    ctx.restore();
+  }
+  text(r.flagged ? `${r.flagged} flagged` : 'byte compare', 320, 379, r.flagged ? P.red : '#71849f', 11);
+  text(`exact match ${r.matched} / 697`, 677, 379, r.flagged ? P.red : P.blue, 12, true, 'right');
+  const sceneX = (view.width - 684 * scale) / 2, sceneY = scale;
+  return { completed: r.matched, failed: rejected, phase: r.day, time: t, cells: r.matched, rejecting, shift, simulated: true, layout: 'reference-factory', bounds: {
+    content: { x: sceneX, y: sceneY, width: 684 * scale, height: 384 * scale },
+    horizontalCoverage: 684 * scale / view.width, bottomPadding: view.height - sceneY - 384 * scale,
+    rejected: { x: sceneX + 612 * scale, y: sceneY + 49 * scale, width: 66 * scale, height: 72 * scale,
+      countText: `${rejected} / 3`, countBounds: { x: sceneX + 618 * scale, y: sceneY + 118 * scale, width: 55 * scale, height: 14 * scale },
+      countBaseline: sceneY + 130 * scale, bottomPadding: 13 * scale, countPlacement: 'below-bin' },
+    belt: { x: sceneX + 17 * scale, y: sceneY + 153 * scale, width: 651 * scale, height: 17 * scale, cardTop: sceneY + 135 * scale }
+  } };
+}

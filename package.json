@@ -1,0 +1,18 @@
+{
+  "name": "agent-bay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A local terminal-style cockpit for model APIs, MCP tools and external agents.",
+  "engines": { "node": ">=22.19.0" },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "build:reference": "node scripts/build-reference.mjs",
+    "build:ui": "node scripts/build-ui.mjs",
+    "check:english": "node scripts/check-english.mjs",
+    "test": "node --test test/*.test.mjs",
+    "video": "node scripts/record-demo.mjs"
+  },
+  "dependencies": { "@modelcontextprotocol/client": "2.3.1" },
+  "devDependencies": { "playwright-core": "1.60.0" }
+}
