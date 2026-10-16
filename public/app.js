@@ -376,6 +376,7 @@ function render() {
   const calls = callsFor(events);
   const reference = player.active && demoFrame.scene === 'cleanroom' ? referenceState(demoFrame.elapsed, demoFrame.duration) : null;
   document.body.classList.toggle('reference-scene', !!reference);
+  document.body.classList.toggle('reference-playable', !!reference?.runtime);
   $('#brand-name').textContent = reference ? 'Agent Bay Studio' : 'Agent Bay';
   $('.titlebar > span').textContent = reference ? 'Agent Bay × REA — clean room · oracle on' : 'agent-bay // local control plane';
   $('.flow-panel .panel-heading .section-label').textContent = reference ? 'ONE BINARY · TWO ROOMS' : 'ONE WORKFLOW · TWO ROOMS';
@@ -407,7 +408,7 @@ function render() {
   $('#metric-calls-label').textContent = reference ? 'functions read' : 'tool calls';
   $('#metric-success-label').textContent = reference ? 'exact match' : 'successful';
   $('#metric-errors-label').textContent = reference ? 'code copied' : 'failed calls';
-  $('#metric-pending').style.color = reference ? reference.rejected && reference.open > 1 ? '#fa3f5b' : '#7d8596' : '';
+  $('#metric-pending').style.color = reference ? reference.openAlert ? '#fa3f5b' : '#7d8596' : '';
   $('#signal-tools').style.color = reference ? reference.constants ? '#fa3f5b' : '#249eff' : '';
   $('#signal-tools-bar').style.background = reference ? reference.constants ? '#fa3f5b' : '#249eff' : '';
   $('#progress-success').style.background = reference?.flagged ? 'linear-gradient(to right, #43cef0 calc(100% - 4px), #fa3f5b calc(100% - 4px))' : '';
@@ -496,7 +497,9 @@ function render() {
   const roomLabels = reference ? ['load binary', 'pseudocode', 'tag obs/inf/unk', 'write SPEC.md', 'commit NOTES.md', 'read SPEC.md', 'build fn', 'run oracle', '3 planted fail', 'check const bytes'] : ['load target', 'read context', 'tag obs/inf/unk', 'write PLAN.md', 'commit NOTES.md', 'read PLAN.md', 'call tools', 'run checks', 'retry failures', 'inspect results'];
   document.querySelectorAll('.room-chips span').forEach((chip, i) => {
     chip.textContent = roomLabels[i];
-    if (reference) chip.classList.toggle('active', reference.testing && i === 9 || reference.seconds < 1 && i === 0 || reference.seconds > 1 && reference.seconds < 17 && Math.floor(reference.seconds / .968) % 5 === i && reference.seconds % .968 > .48);
+    chip.hidden = !!reference && i === 9 && !reference.constants;
+    chip.style.setProperty('--pulse', reference ? i < 5 ? reference.roomPulseA.toFixed(3) : i < 8 ? reference.roomPulseB.toFixed(3) : 0 : '');
+    if (reference) chip.classList.toggle('active', i === 8 ? reference.plantedChip : i === 9);
   });
   if (reference) {
     $('#progress-called').style.width = `${reference.read / 697 * 100}%`;

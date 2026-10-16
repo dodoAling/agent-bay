@@ -761,6 +761,22 @@ export const REFERENCE_STATES = FRAME_ROWS.map(([read, matched, day, rejected, f
 }));
 export const REFERENCE_NODES = REFERENCE_STATES;
 
+// Room chips and header chrome: mean chip/digit colour on every decoded frame.
+// Intervals are inclusive frame indexes; planted and still-open cut without fades.
+const PLANTED_CHIP_FRAMES = [[175, 254], [291, 370], [552, 631]];
+const OPEN_ALERT_FRAMES = [[526, 645]];
+// Room pulses repeat every 0.968 s; normalised border brightness per frame of one pulse.
+const ROOM_PULSE = [0, .26, .47, .66, .8, .92, 1, 1, 1, .95, .85, .7, .53, .3, .05, 0];
+const ROOM_A_PULSES = 18, ROOM_B_PULSES = 22;
+const within = (intervals, index) => intervals.some(([start, end]) => index >= start && index <= end);
+function roomPulse(seconds, pulses) {
+  const cycle = Math.floor(seconds / .968);
+  if (cycle >= pulses) return 0;
+  const offset = (seconds - cycle * .968) * 30, low = Math.floor(offset);
+  if (low >= ROOM_PULSE.length - 1) return 0;
+  return ROOM_PULSE[low] + (ROOM_PULSE[low + 1] - ROOM_PULSE[low]) * (offset - low);
+}
+
 export function referenceState(elapsedMs, durationMs = REFERENCE_DURATION_MS) {
   const safeDuration = Number(durationMs) > 0 ? Number(durationMs) : REFERENCE_DURATION_MS;
   const fraction = Math.min(1, Math.max(0, Number(elapsedMs) || 0) / safeDuration);
@@ -770,7 +786,9 @@ export function referenceState(elapsedMs, durationMs = REFERENCE_DURATION_MS) {
   let calloutOpacity = state.callout ? 1 : 0;
   if (state.callout === 'bug') calloutOpacity = Math.min(1, (seconds - 16.5333333333) / (16.7 - 16.5333333333));
   if (state.callout === 'test' && seconds > 19.5666666667) calloutOpacity = Math.max(0, 1 - (seconds - 19.5666666667) / .2);
-  return { ...state, ...REFERENCE_DETAILS[index], seconds, calloutOpacity, constants: seconds >= 17.0333333333 };
+  return { ...state, ...REFERENCE_DETAILS[index], seconds, calloutOpacity, constants: seconds >= 17.0333333333,
+    plantedChip: within(PLANTED_CHIP_FRAMES, index), openAlert: within(OPEN_ALERT_FRAMES, index),
+    roomPulseA: roomPulse(seconds, ROOM_A_PULSES), roomPulseB: roomPulse(seconds, ROOM_B_PULSES) };
 }
 
 // BEGIN MEASURED FACTORY DETAILS

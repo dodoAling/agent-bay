@@ -401,3 +401,13 @@ body:not(.presentation) .agent-markdown a{color:#76bcff;text-underline-offset:3p
   body:not(.presentation) .window>footer{height:20px}
 }
 @media(prefers-reduced-motion:reduce){body:not(.presentation) .work-state::before,body:not(.presentation) .phase-indicator{animation:none!important}}
+
+/* Clean-room reference chrome: chip pulse, planted glow and status glyph measured from the reference frames. */
+.room-chips span[hidden]{display:none!important}
+.presentation.reference-scene .metrics span{white-space:nowrap}
+.presentation.reference-scene .room-chips span{--pulse:0;transition:none;border-color:color-mix(in srgb,#3d7fcf calc(var(--pulse) * 100%),#2b3549);background:color-mix(in srgb,#14203a calc(var(--pulse) * 100%),#0f1825);color:color-mix(in srgb,#cfe2fb calc(var(--pulse) * 100%),#8795ab);box-shadow:0 0 calc(var(--pulse) * 6px) color-mix(in srgb,#2f80ed calc(var(--pulse) * 60%),transparent)}
+.presentation.reference-scene .room-actions .room-chips span.active:not(.danger){border-color:#4a7f9c;background:#13202f;color:#d5e6f2;box-shadow:0 0 4px #3f9fd03a}
+.presentation.reference-scene .room-actions .room-chips span.danger.active{border-color:#c94456;background:#1d1520;color:#e6d9dd;box-shadow:0 0 6px #d23c5577}
+.presentation.reference-scene .status-dot{width:10px;height:10px;flex-shrink:0;background:linear-gradient(90deg,#c9d6e6 50%,transparent 50%);box-shadow:inset 0 0 0 1.5px #c9d6e6}
+.presentation.reference-scene.reference-playable .status-dot{background:#45d0f0;box-shadow:none}
+.presentation.reference-scene.reference-playable #model-label{color:#45d0f0}
