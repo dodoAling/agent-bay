@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const includeArtifacts = process.argv.includes('--artifacts');
-const excluded = new Set(['.git', 'node_modules', '__pycache__', 'bin', 'obj']);
+const excluded = new Set(['.git', 'node_modules', '__pycache__', 'bin', 'obj', 'README.zh-CN.md']);
 const generated = new Set(['src-tauri/target', 'src-tauri/gen', 'src-tauri/resources/server', 'src-tauri/binaries']);
 if (!includeArtifacts) excluded.add('artifacts');
 const extensions = new Set(['.md', '.js', '.mjs', '.json', '.html', '.css', '.py', '.ps1', '.cmd', '.txt', '.log', '.cs', '.csproj', '.rs', '.toml']);

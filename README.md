@@ -1,6 +1,22 @@
 # Agent Bay
 
+**English** | [&#x4E2D;&#x6587;](README.zh-CN.md)
+
 A local terminal-style dashboard for live model output, tool calls, analysis results, and task status. Runs on Windows, macOS, and Linux, with model APIs, MCP tools, and external agents.
+
+## Screenshots
+
+![Workspace running a live REA session: tool calls on the left, the context-model-tools-result pipeline in the middle, and the flight recorder on the right](docs/media/rea-live.png)
+
+| Standby workspace | Square demo | Portrait demo | Appearance settings |
+| --- | --- | --- | --- |
+| ![Standby workspace waiting for the first tool call](docs/media/standby.png) | ![Square-format demo preview with simulated calls](docs/media/preview-square.png) | ![Portrait-format demo preview](docs/media/preview-portrait.png) | ![Appearance settings with window-control choice cards](docs/media/settings-appearance-compact.png) |
+
+## Demo video
+
+<video src="docs/media/agent-bay-cleanroom-square-24.8s-30fps.mp4" poster="docs/media/agent-bay-cleanroom-square-24.8s-30fps-cover.png" controls muted width="540"></video>
+
+[Play the clean-room demo](docs/media/agent-bay-cleanroom-square-24.8s-30fps.mp4) — 24.8 s at 30 fps, square 1080×1080, no audio. All data is simulated; see [Promotional previews](#promotional-previews) to run it live.
 
 ## Start
 
@@ -263,7 +279,7 @@ node scripts/verify-reference.mjs
 
 Tests cover authentication, redaction, fragmented Unicode SSE, both model protocols, cancellation, truncation, long-session accounting, delivery recovery, results, lifecycle states, and cross-platform discovery. Local protocol fixtures do not establish commercial model compatibility.
 
-The English text check scans repository-authored text, excluding dependencies and generated artifacts. Use `npm run check:english -- --artifacts` to include local text reports. Multilingual transport fixtures use Unicode escapes to preserve byte-level coverage.
+The English text check scans repository-authored text, excluding dependencies, generated artifacts, and translated documents such as README.zh-CN.md. Use `npm run check:english -- --artifacts` to include local text reports. Multilingual transport fixtures use Unicode escapes to preserve byte-level coverage.
 
 Layout verification checks 16 scene/format/time combinations, including width, balanced factory padding, actual rejection glyphs, slot/bin/card clearance, machine alignment, and action/log space. Timeline verification checks 744 timestamps, 45 boundaries, deterministic pause/seeking, and live restoration. Both require Chrome/Chromium; custom paths use `AGENT_BAY_CHROME_PATH`.
 
@@ -292,3 +308,6 @@ API documentation: [MCP TypeScript SDK](https://github.com/modelcontextprotocol/
 - Email: [dodoaling@163.com](mailto:dodoaling@163.com)
 - X (Twitter): [@DodoAling](https://x.com/DodoAling)
 - wechat: `dodoaling`
+- WeChat official account: `DodoAling` — scan the code, or search as printed on it:
+
+<img src="docs/media/wechat-mp-qr.png" alt="WeChat official account QR code: scan, or search DodoAling inside WeChat" width="420">
