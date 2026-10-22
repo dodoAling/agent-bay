@@ -1,8 +1,20 @@
 # Agent Bay
 
-**English** | [&#x4E2D;&#x6587;](README.zh-CN.md)
+**English** | [&#x4E2D;&#x6587;](README.zh-CN.md) · **[github.com/dodoAling/agent-bay](https://github.com/dodoAling/agent-bay)**
 
-A local terminal-style dashboard for live model output, tool calls, analysis results, and task status. Runs on Windows, macOS, and Linux, with model APIs, MCP tools, and external agents.
+[![GitHub stars](https://img.shields.io/github/stars/dodoAling/agent-bay?style=flat&color=5d95f2)](https://github.com/dodoAling/agent-bay/stargazers)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-9aa7bd)](https://github.com/dodoAling/agent-bay)
+
+Agent Bay turns an AI agent's invisible work into a live mission-control view: model output streams in, every tool call shows its arguments and result, and the task pipeline animates round by round — all local, on your own machine.
+
+What you can do with it:
+
+- **Watch agents work** — connect a model API (Chat Completions or Anthropic Messages) plus MCP tools, run a task, and see each round's reasoning, tool calls, and results as they happen.
+- **Drive REA** — run REA's reverse-engineering tools from the dashboard, with or without a model account.
+- **Observe external agents** — place the bundled MCP proxy in front of an existing server, or POST events from any language, and activity from clients like Codex appears live.
+- **Record it** — built-in demo scenes export to MP4 (square / landscape / portrait) for docs and social posts, with simulated data — no API key needed.
+
+Runs on Windows, macOS, and Linux. Keys, tasks, and history stay in local server memory; nothing leaves the machine.
 
 ## Screenshots
 

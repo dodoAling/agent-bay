@@ -1,8 +1,20 @@
 # Agent Bay
 
-**中文** | [English](README.md)
+**中文** | [English](README.md) · **[github.com/dodoAling/agent-bay](https://github.com/dodoAling/agent-bay)**
 
-本地终端风格的仪表盘，实时展示模型输出、工具调用、分析结果与任务状态。支持 Windows、macOS、Linux，可接入模型 API、MCP 工具与外部智能体。
+[![GitHub stars](https://img.shields.io/github/stars/dodoAling/agent-bay?style=flat&color=5d95f2)](https://github.com/dodoAling/agent-bay/stargazers)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-9aa7bd)](https://github.com/dodoAling/agent-bay)
+
+Agent Bay 把 AI 智能体看不见的工作过程变成一块实时的"任务控制屏"：模型逐字输出、每一次工具调用的入参与结果、任务流水线逐轮推进——全部在本地、你自己的机器上。
+
+它能做什么：
+
+- **看智能体干活** —— 接一个模型 API（Chat Completions 或 Anthropic Messages）加上 MCP 工具，跑一个任务，逐轮看到推理、工具调用与结果。
+- **驱动 REA** —— 从仪表盘直接使用 REA 的逆向工程工具，有没有模型账号都行。
+- **观察外部智能体** —— 把内置 MCP 代理挡在现有服务器前面，或让任意语言的智能体 POST 事件进来，Codex 等客户端的活动实时上屏。
+- **录成视频** —— 内置演示场景一键导出 MP4（方形 / 横版 / 竖版），数据为模拟，发文档和社媒都能用，无需 API key。
+
+支持 Windows、macOS、Linux。密钥、任务与历史只存在本地服务器内存中，不出这台机器。
 
 ## 界面截图
 
